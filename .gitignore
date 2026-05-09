@@ -1,0 +1,43 @@
+# IDE
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# Build (Maven)
+target/
+build/
+out/
+*.class
+
+# Logs / temp
+*.log
+*.tmp
+*.swp
+.DS_Store
+
+# Local env / secrets
+.env
+.env.local
+*.local.yaml
+*.local.yml
+
+# OS
+Thumbs.db
+
+# Docker volumes (local infra)
+docker-volumes/
+*-postgres-data/
+*-kafka-data/
+
+# Cucumber / test reports
+cucumber-report/
+cucumber.json
+target-acceptance-test/
+
+# Generated avro sources (regenerate via make run-avro-model)
+generated-sources/
+
+# JEnv / SDKMAN local files
+.java-version
