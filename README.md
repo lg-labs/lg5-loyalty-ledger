@@ -1,4 +1,4 @@
-# loyalty-ledger-service
+# lg5-loyalty-ledger
 
 Microservice built on top of the
 [`lg5-spring`](https://github.com/lg-labs-pentagon/lg5-spring) framework,
@@ -12,7 +12,7 @@ following the conventions packaged in
 This repository pins the agent operating layer as a git submodule:
 
 ```bash
-git clone --recurse-submodules git@github.com:lg-labs-pentagon/loyalty-ledger-service.git
+git clone --recurse-submodules git@github.com:lg-labs/lg5-loyalty-ledger.git
 # or, if you've already cloned without --recurse-submodules:
 git submodule update --init --recursive
 ```
@@ -23,7 +23,7 @@ The submodule lives at `.agent-os/` and is pinned to **`lg5-spring-agent-os@v0.3
 ## Repository layout (bootstrap)
 
 ```
-loyalty-ledger-service/
+lg5-loyalty-ledger/
 ├── AGENTS.md                            # consumer thin index → .agent-os/AGENTS.md
 ├── README.md                            # this file
 ├── .agent-os/                           # submodule, pinned to v0.3.0

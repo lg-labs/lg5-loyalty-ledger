@@ -1,4 +1,4 @@
-# AGENTS.md — loyalty-ledger-service
+# AGENTS.md — lg5-loyalty-ledger
 
 Microservice built on top of [`lg5-spring`](https://github.com/lg-labs-pentagon/lg5-spring) framework.
 
@@ -17,14 +17,14 @@ submodule pinned at a SemVer tag, mounted at `.agent-os/`.
 └── specs/                       # SDD templates + worked examples
 ```
 
-**Read [`/Users/luis.quiroga/Documents/lg/training/ai/loyalty-ledger-service/.agent-os/AGENTS.md`](.agent-os/AGENTS.md)
+**Read [`.agent-os/AGENTS.md`](.agent-os/AGENTS.md)
 first** — it carries the full skill routing table, the command catalog,
 the rule cheat sheet, and the constitution callout. The rest of this file
 is service-specific overlay.
 
 ## Service-specific context
 
-- **Service name:** `loyalty-ledger-service`
+- **Service name:** `lg5-loyalty-ledger`
 - **Pinned bundle version:** `v0.3.0` (lg5-spring SHA `cbb6783`)
 - **Stack:** Spring Boot 3.4.2, JDK 21, Maven (per RULE-001).
 - **Module shape:** mirrors `blank-service` (per RULE-004). Modules will be
