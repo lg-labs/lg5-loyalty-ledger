@@ -176,16 +176,18 @@ work (M2-M3).
 
 ## TASK-009 — Kafka listener + config for `order-paid`
 
-- **Status:** todo
+- **Status:** done
 - **References:** REQ-001, REQ-015, RULE-007, RULE-010, RULE-014, ADR-001
 - **Depends on:** TASK-008
-- **Modules touched:** `lg5-loyalty-ledger-message-core`
+- **Modules touched:** `lg5-loyalty-ledger-message-core`, `lg5-loyalty-ledger-container` (Kafka container added to `TestContainersLoader` + IT)
 - **Skill:** `lg5-kafka-avro`
 - **Command / Subagent:** `/add-kafka-listener lg5-loyalty-ledger order-paid OrderPaidAvroModel`
 - **Acceptance:**
   - **Given** a Kafka Testcontainers broker with the `order-paid` topic
   - **When** an `OrderPaidAvroModel` is produced and the listener consumes it
   - **Then** the listener calls the application-service input port exactly once per message; the listener bean is configured as `batch-listener: true` (RULE-010) and is wired through `kafka-consumer-config.*` properties (RULE-014); thrown `OptimisticLockingFailureException` and `DataIntegrityViolationException` (added by ADR-003) are caught and logged at `DEBUG` as NO-OP without rethrowing (RULE-010 + ADR-003).
+
+> Completed in commit <sha-placeholder>; `OrderPaidKafkaListener` + `MessagingBeansConfig` (registers the RULE-005-clean mapper as a `@Bean` so the listener can `@Autowire` it) added to `lg5-loyalty-ledger-message-core`. `TestContainersLoader` extended with `ConfluentKafkaContainerCustomConfig` (gated by `testcontainers.kafka.enabled`, default `false` in `application-test.yaml` so existing data-access ITs are unaffected). `OrderPaidKafkaListenerIT` (1 IT) flips both `testcontainers.{postgres,kafka}.enabled=true`, mocks the `LoyaltyLedgerInputPort` (real impl ships in TASK-011), produces one Avro `OrderPaidAvroModel`, and verifies a single `OrderPaidCommand` is dispatched with all fields preserved (eventId, customerId, orderId, paidAmount, eventType=`"OrderPaid"`).
 
 ## TASK-010 — Kafka listener + config for `order-cancelled`
 
