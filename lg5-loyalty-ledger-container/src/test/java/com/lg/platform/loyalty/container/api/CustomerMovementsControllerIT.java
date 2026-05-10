@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.TestPropertySource;
 
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -93,10 +94,15 @@ class CustomerMovementsControllerIT extends RestBootstrap {
         assertThat(lastAppendedAt(p1)).isAfterOrEqualTo(firstAppendedAt(p2));
 
         // Page 0's first row is the most recently appended seed row.
+        // Postgres `timestamptz` stores microsecond precision, so the
+        // value round-tripped through the DB is truncated relative to
+        // the in-memory seed (which carries nanos from
+        // ZonedDateTime.now()). Compare both sides truncated to micros.
         final ZonedDateTime newestSeed = seeded.stream()
                 .map(MovementJpaEntity::getAppendedAt)
-                .max(ZonedDateTime::compareTo).orElseThrow();
-        assertThat(firstAppendedAt(p0)).isEqualTo(newestSeed);
+                .max(ZonedDateTime::compareTo).orElseThrow()
+                .truncatedTo(ChronoUnit.MICROS);
+        assertThat(firstAppendedAt(p0).truncatedTo(ChronoUnit.MICROS)).isEqualTo(newestSeed);
     }
 
     @Test
