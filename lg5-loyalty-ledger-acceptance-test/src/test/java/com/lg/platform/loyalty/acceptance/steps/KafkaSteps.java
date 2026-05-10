@@ -6,7 +6,6 @@ import com.lg.platform.loyalty.dataaccess.movement.repository.MovementJpaReposit
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 import java.util.UUID;
@@ -17,6 +16,11 @@ import static org.awaitility.Awaitility.await;
 
 /**
  * REQ-015 swallow scenario step definitions (TASK-019).
+ *
+ * <p><b>NOT annotated {@code @Component}</b> — Cucumber-Spring
+ * 7.x rejects glue classes carrying that stereotype. Instances
+ * are created by Cucumber-Spring's own factory and Spring still
+ * autowires the constructor.
  *
  * <p>Drives the {@code OrderPaidKafkaListener} via a real Avro
  * producer (see {@link KafkaTestSupport}) so the listener's
@@ -49,7 +53,6 @@ import static org.awaitility.Awaitility.await;
  * listener container's error handler chain.
  */
 @Slf4j
-@Component
 public class KafkaSteps {
 
     /**

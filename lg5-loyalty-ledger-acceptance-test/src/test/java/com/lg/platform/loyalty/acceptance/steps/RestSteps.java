@@ -5,7 +5,6 @@ import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import io.restassured.RestAssured;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
 
 import java.util.UUID;
 
@@ -22,14 +21,16 @@ import static org.assertj.core.api.Assertions.assertThat;
  * stashes the {@code Response} so {@code Then} steps can assert
  * on status, headers, and body without re-issuing the call.
  *
- * <p>RULE-005: stock {@code @Component}. RULE-006 is verified by
- * the {@code Then the response Content-Type is "application/vnd.api.v1+json"}
- * step which asserts the controller's {@code produces=...}
- * propagates through both the happy path and the
- * {@code RestControllerAdvice} error path.
+ * <p><b>NOT annotated {@code @Component}</b> — Cucumber-Spring
+ * 7.x rejects glue classes carrying that stereotype. Instances
+ * are created by Cucumber-Spring's own factory and Spring still
+ * autowires the constructor. RULE-006 is verified by the
+ * {@code Then the response Content-Type starts with the v1
+ * vendor JSON} step which asserts the controller's
+ * {@code produces=...} propagates through both the happy path
+ * and the {@code RestControllerAdvice} error path.
  */
 @Slf4j
-@Component
 public class RestSteps {
 
     private static final String VENDOR_JSON = "application/vnd.api.v1+json";

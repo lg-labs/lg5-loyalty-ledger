@@ -4,11 +4,19 @@ import com.lg.platform.loyalty.acceptance.support.World;
 import io.cucumber.java.Before;
 import io.restassured.builder.RequestSpecBuilder;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
 
 /**
  * Cucumber {@code @Before} hook that materialises the per-scenario
  * RestAssured request specification (TASK-019).
+ *
+ * <p><b>NOT annotated {@code @Component}</b> — Cucumber-Spring
+ * 7.x rejects glue classes (anything carrying {@code @Before},
+ * {@code @After}, {@code @Given/When/Then}) when they ALSO carry
+ * {@code @Component} (see
+ * {@code SpringFactory.checkNoComponentAnnotations}). The hook
+ * class is instantiated and wired by Cucumber-Spring's own
+ * factory; Spring autowiring of {@link Value} and constructor
+ * injection still works.
  *
  * <p>{@code Lg5TestBoot} (the framework parent of
  * {@link com.lg.platform.loyalty.acceptance.boot.CucumberHooks})
@@ -27,7 +35,8 @@ import org.springframework.stereotype.Component;
  *       {@code @LocalServerPort}-bound field on
  *       {@code Lg5TestBoot} is package-private and not visible
  *       across packages, hence the {@code @Value} read here.</li>
- *   <li>Building a {@link io.restassured.specification.RequestSpecification}
+ *   <li>Building a
+ *       {@link io.restassured.specification.RequestSpecification}
  *       with the port + the v1 vendor JSON content type required
  *       by RULE-006 / REQ-016. Stashed in
  *       {@link World#setRequestSpec} so REST step-defs can
@@ -35,11 +44,10 @@ import org.springframework.stereotype.Component;
  * </ol>
  *
  * <p>Order is left at the default ({@code 1000}) — no other hook
- * depends on the request spec being built first; the sole consumer
- * is REST step-def {@code When} blocks which run strictly after
- * all hooks.
+ * depends on the request spec being built first; the sole
+ * consumer is REST step-def {@code When} blocks which run
+ * strictly after all hooks.
  */
-@Component
 public class RestSetupHooks {
 
     private final World world;

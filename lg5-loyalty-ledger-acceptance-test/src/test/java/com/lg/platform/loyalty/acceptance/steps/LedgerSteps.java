@@ -19,7 +19,6 @@ import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
@@ -54,13 +53,16 @@ import static org.assertj.core.api.Assertions.assertThat;
  * because the swallow happens inside the listener; that scenario
  * is the sole user of {@code KafkaTestSupport}.
  *
- * <p>RULE-005: stock {@code @Component} only. Cucumber-Spring
- * picks up step-def classes via classpath scan; the
- * {@code @CucumberContextConfiguration} on
- * {@code CucumberHooks} drives the scan.
+ * <p><b>NOT annotated {@code @Component}</b> (Cucumber-Spring
+ * 7.x explicitly rejects glue classes that carry
+ * {@code @Component} or any meta-{@code @Component} annotation —
+ * see {@code SpringFactory.checkNoComponentAnnotations}). The
+ * Cucumber-Spring backend instantiates this class itself and
+ * runs Spring autowiring against the resulting instance, so
+ * {@link Autowired} on the constructor still works without the
+ * stereotype annotation.
  */
 @Slf4j
-@Component
 public class LedgerSteps {
 
     private final World world;
