@@ -17,9 +17,9 @@ spring:
   # with `Connection refused`. Mirrors the per-IT @TestPropertySource
   # blanks in CustomerMovementsControllerIT / OrderPaidKafkaListenerIT.
   datasource:
-    url:
-    username:
-    password:
+    url: ""
+    username: ""
+    password: ""
 
 # RULE-012: scheduler off in test profile (ATDD scenarios trigger
 # the outbox flush manually via the OutboxScheduler bean to avoid
