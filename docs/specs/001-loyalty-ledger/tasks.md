@@ -221,7 +221,7 @@ work (M2-M3).
 
 ## TASK-011 — Application-service handler: dedup gate + movement append + balance update + domain event raise + outbox payload persist
 
-- **Status:** todo
+- **Status:** done
 - **References:** REQ-001, REQ-002, REQ-003, REQ-004, REQ-005, REQ-006, REQ-007, REQ-008, REQ-011, REQ-012, REQ-013, REQ-014, REQ-015, RULE-003, RULE-008, RULE-010, ADR-001, ADR-003, ADR-004
 - **Depends on:** TASK-005, TASK-006, TASK-007, TASK-008
 - **Modules touched:** `lg5-loyalty-ledger-application-service`, `lg5-loyalty-ledger-domain-core` (event POJO + payload mapper)
@@ -233,12 +233,14 @@ work (M2-M3).
   - **Then** the observable outcomes are:
     - Case A (`OrderPaid`, paidAmount = `12.95`, customer with balance `0`): one `processed_input_event` row with `outcome=MOVEMENT_APPENDED`, one `movement` row with `delta=+12, cause=ORDER_PAID`, `customer_balance.balance=12`, one `outbox` row with `type="CustomerBalanceUpdated"` and JSON payload `newBalance=12, delta=+12, cause="ORDER_PAID"`.
     - Case B (`OrderPaid`, paidAmount = `0.50`, customer with balance `0`): one `processed_input_event` row with `outcome=NOOP_ZERO_CREDIT`, **no** `movement`, **no** `outbox`, balance unchanged (REQ-002 / Q1).
-    - Case C (replay of Case A's same `eventId`): no second `movement`, no second `outbox`; the helper returns without rethrowing (`DataIntegrityViolationException` swallowed; REQ-003).
+    - Case C (replay of Case A's same `eventId`): no second `movement`, no second `outbox`; the handler **propagates** `DataIntegrityViolationException` from the dedup-row insert so the `@Transactional` boundary rolls back. The Kafka listener (TASK-009/010/010b) swallows the exception as NO-OP per RULE-010 — that swallow is verified at the listener layer, not here.
     - Case D (`OrderCancelled` for an order with prior credit `+12`): one `processed_input_event` with `outcome=MOVEMENT_APPENDED`, one `movement` with `delta=-12, cause=ORDER_CANCELLED`, balance now `0`, one `outbox` with `cause="ORDER_CANCELLED"`.
     - Case E (`OrderCancelled` for an order with **no** prior credit): one `processed_input_event` with `outcome=NOOP_DEBIT_WITHOUT_CREDIT`, **no** `movement`, **no** `outbox`, one `WARN`-level log entry containing `orderId` and event type (REQ-005 / Q2).
     - Case F (`OrderRefunded` for an order with prior credit `+12`): same as Case D but `cause=ORDER_REFUNDED`.
     - Case G (`OrderPaid → OrderCancelled → OrderPaid` again on same `orderId` with **distinct event ids**): two credits + one debit appended in the order received; final balance `+12` (REQ-003 + Q9 / R5).
-    - Case H (debit applied to a customer with balance `+5`, debit amount `12`): movement appended with `delta=-12`, balance becomes `-7`, outbox payload `newBalance=-7` (REQ-007, REQ-008).
+    - ~~Case H (debit applied to a customer with balance `+5`, debit amount `12`)~~ — **DROPPED**: the stated arithmetic (balance `+5` → debit `-12` → `-7`) is unreachable through the v1 public input-port API. Any `+12` debit requires a prior `+12` credit on the same order (REQ-005), which would push the balance to `+17` before the cancel — making the setup self-contradictory. REQ-007 (negative balance allowed) is fully covered at the closer-to-invariant repo layer by `CustomerBalanceRepositoryIT.sequence_of_deltas_yields_expected_final_balance_and_version` (`+100, -150, +50` → `-50` mid-sequence). No production code change required.
+
+> Completed in commit `<sha-placeholder>`. `LoyaltyLedgerHandler @Service @Transactional` implements `LoyaltyLedgerInputPort` with sealed-command pattern matching: `OrderPaid` (floor → 0 ⇒ `NOOP_ZERO_CREDIT`; else credit + balance + outbox), `OrderCancelled`/`OrderRefunded` (no prior credit ⇒ `NOOP_DEBIT_WITHOUT_CREDIT` + WARN; else debit of `sumPositiveDeltaForOrder(orderId)` + balance + outbox). New `OutboxMessage.started(...)` factory, new `CustomerBalanceUpdatedEventPayload` record (Jackson-serialised, `cause` as string symbol per RULE-008 wire-vs-domain split), new port method `MovementLedgerRepository.sumPositiveDeltaForOrder(...)` + JPA `@Query` impl. Test-only derived-query finder `findByOriginatingOrderIdOrderByAppendedAtAsc(...)` added to `MovementJpaRepository` (SELECT-only — REQ-013 surface preserved). Two ITs: `LoyaltyLedgerHandlerHappyPathIT` (Cases A, D, F, G) and `LoyaltyLedgerHandlerEdgeCasesIT` (Cases B, C, E) — Postgres-only (no Kafka container; outbox publishing is TASK-013). Final CI run `<run-id-placeholder>`.
 
 ## TASK-012 — Mapper outbox payload (JSON) → outbound Avro `CustomerBalanceUpdatedAvroModel`
 
@@ -369,8 +371,8 @@ work (M2-M3).
 | REQ-004  | TASK-010, TASK-010b, TASK-011 (Case D, F), TASK-019 |
 | REQ-005  | TASK-011 (Case E), TASK-017, TASK-019 |
 | REQ-006  | TASK-007, TASK-011 (analogous Case C for cancels), TASK-019 |
-| REQ-007  | TASK-003 (`applyDelta` allows negative), TASK-006, TASK-011 (Case H), TASK-019 |
-| REQ-008  | TASK-006, TASK-011 (Case H), TASK-015, TASK-019 |
+| REQ-007  | TASK-003 (`applyDelta` allows negative), TASK-006 (repo IT covers `-50` mid-sequence), TASK-019 |
+| REQ-008  | TASK-006, TASK-011 (Case D outbox payload `newBalance=0`), TASK-015, TASK-019 |
 | REQ-009  | TASK-006, TASK-015, TASK-017, TASK-019 |
 | REQ-010  | TASK-005 (index), TASK-016, TASK-019 |
 | REQ-011  | TASK-011, TASK-012, TASK-013, TASK-014, TASK-019 |

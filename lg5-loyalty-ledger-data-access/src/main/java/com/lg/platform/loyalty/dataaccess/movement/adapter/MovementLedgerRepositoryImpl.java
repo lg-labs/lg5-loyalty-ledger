@@ -43,4 +43,9 @@ public class MovementLedgerRepositoryImpl implements MovementLedgerRepository {
         return movementJpaRepository.existsByOriginatingOrderIdAndDeltaGreaterThan(
                 originatingOrderId.getValue(), 0);
     }
+
+    @Override
+    public int sumPositiveDeltaForOrder(final OrderId originatingOrderId) {
+        return movementJpaRepository.sumPositiveDeltaForOrder(originatingOrderId.getValue());
+    }
 }

@@ -40,4 +40,17 @@ public interface MovementLedgerRepository {
      * {@code outcome = NOOP_DEBIT_WITHOUT_CREDIT}.
      */
     boolean existsCreditFor(OrderId originatingOrderId);
+
+    /**
+     * REQ-004 / data-model.md §Movement: returns the sum of positive
+     * deltas (credits) ever recorded for the given originating order.
+     * Used by the inbound handler to compute the magnitude of the
+     * compensating debit when an {@code OrderCancelled} or
+     * {@code OrderRefunded} event arrives — debits in v1 always carry
+     * {@code -sumOfCredits} (no partial cancel / refund per PRD
+     * §Out-of-scope). Returns {@code 0} when no credit exists; the
+     * handler short-circuits that case via {@link #existsCreditFor}
+     * before calling this method.
+     */
+    int sumPositiveDeltaForOrder(OrderId originatingOrderId);
 }
