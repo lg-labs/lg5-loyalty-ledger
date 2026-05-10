@@ -58,6 +58,20 @@
             <artifactId>lg5-spring-integration-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <!--
+            TASK-005 (002-api-specifications): contract-test the REST
+            ITs against docs/api/openapi.yaml. swagger-request-validator
+            is OpenAPI-3.x-aware (despite the name) and integrates as
+            a RestAssured Filter — every response body, status code,
+            content type and header is validated against the spec on
+            top of the existing Hamcrest assertions.
+        -->
+        <dependency>
+            <groupId>com.atlassian.oai</groupId>
+            <artifactId>swagger-request-validator-restassured</artifactId>
+            <version>2.44.9</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
