@@ -5,7 +5,6 @@ import com.lg.platform.loyalty.container.boot.RestBootstrap;
 import com.lg.platform.loyalty.domain.entity.CustomerBalance;
 import com.lg.platform.loyalty.domain.valueobject.CustomerId;
 import io.restassured.RestAssured;
-import io.restassured.http.ContentType;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.TestPropertySource;
@@ -15,6 +14,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 
 /**
  * REST IT for {@code GET /loyalty/customers/{customerId}/balance}
@@ -77,35 +77,32 @@ class CustomerBalanceControllerIT extends RestBootstrap {
     }
 
     /**
-     * Acceptance criterion (TASK-015) calls for {@code 404 Not Found}
-     * with an {@code ErrorDTO} body when the customer is unknown. The
-     * full mapping ({@code RuntimeException → 404 + ErrorDTO}) is the
-     * job of the {@code @RestControllerAdvice} that ships in
-     * <strong>TASK-017</strong>; until then the
-     * {@link com.lg.platform.loyalty.application.exception.CustomerBalanceNotFoundException}
-     * thrown by the query service surfaces as Spring's default
-     * {@code 500} (no advice on the scan path yet).
+     * REQ-009 + TASK-017: an unknown customer surfaces as
+     * {@code 404 CUSTOMER_NOT_FOUND} via the
+     * {@link com.lg.platform.loyalty.api.rest.LoyaltyLedgerExceptionAdvice}
+     * (TASK-017 added the advice on the scan path; previously this
+     * was Spring's default {@code 500}).
      *
-     * <p>This test therefore asserts the <em>structural</em>
-     * pre-conditions that TASK-017 will then refine: the row really
-     * is absent, and the endpoint reaches the controller (i.e. the
-     * URL is wired). The 404 status + {@code ErrorDTO{code=
-     * CUSTOMER_NOT_FOUND, ...}} body assertions ship with TASK-017's
-     * IT to keep the per-TASK contract clean.
+     * <p>This used to be a structural-only check (the row really is
+     * absent + the endpoint reaches the controller); now that the
+     * advice is in place the full contract — status, content-type,
+     * and {@code ErrorDTO} body — is pinned here, completing the
+     * fix-up note from {@code 7cc71c5}.
      */
     @Test
-    void getBalance_for_unknown_customer_reaches_handler_and_no_row_is_present() {
+    void getBalance_for_unknown_customer_returns_404_customerNotFound_errorDto() {
         final UUID unknown = UUID.randomUUID();
         assertThat(customerBalanceRepository.findById(new CustomerId(unknown))).isEmpty();
 
-        final int status = RestAssured.given(requestSpecification)
-                .accept(ContentType.ANY)
+        RestAssured.given(requestSpecification)
+                .accept("application/vnd.api.v1+json")
                 .when()
                 .get("/loyalty/customers/{customerId}/balance", unknown.toString())
                 .then()
-                .extract().statusCode();
-        // Pre-TASK-017 this is 500 (no advice). Post-TASK-017 this is 404.
-        // Either way it is non-2xx — the row really is absent.
-        assertThat(status).isGreaterThanOrEqualTo(400);
+                .statusCode(404)
+                .contentType("application/vnd.api.v1+json")
+                .body("code", equalTo("CUSTOMER_NOT_FOUND"))
+                .body("message", notNullValue())
+                .body("traceId", nullValue());
     }
 }

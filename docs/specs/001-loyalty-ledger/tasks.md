@@ -309,7 +309,7 @@ work (M2-M3).
 
 ## TASK-017 — Error handling + `ErrorDTO` mapping (`@RestControllerAdvice`)
 
-- **Status:** todo
+- **Status:** done
 - **References:** REQ-009, REQ-010, REQ-015, RULE-005, RULE-006
 - **Depends on:** TASK-015, TASK-016
 - **Modules touched:** `lg5-loyalty-ledger-api`
