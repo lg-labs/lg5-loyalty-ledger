@@ -244,7 +244,7 @@ work (M2-M3).
 
 ## TASK-012 — Mapper outbox payload (JSON) → outbound Avro `CustomerBalanceUpdatedAvroModel`
 
-- **Status:** todo
+- **Status:** done
 - **References:** REQ-011, REQ-012, RULE-007, RULE-008, ADR-005
 - **Depends on:** TASK-011
 - **Modules touched:** `lg5-loyalty-ledger-message-core`, `lg5-loyalty-ledger-message-model` (Avro classes consumed)

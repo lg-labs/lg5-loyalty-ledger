@@ -1,0 +1,63 @@
+{
+    "namespace": "com.lg.platform.loyalty.kafka.avro.model",
+    "type": "record",
+    "name": "CustomerBalanceUpdatedAvroModel",
+    "fields": [
+        {
+            "name": "messageId",
+            "type": {
+                "type": "string",
+                "logicalType": "uuid"
+            }
+        },
+        {
+            "name": "customerId",
+            "type": {
+                "type": "string",
+                "logicalType": "uuid"
+            }
+        },
+        {
+            "name": "newBalance",
+            "type": "long"
+        },
+        {
+            "name": "delta",
+            "type": "int"
+        },
+        {
+            "name": "cause",
+            "type": {
+                "type": "enum",
+                "name": "BalanceUpdateCause",
+                "symbols": ["ORDER_PAID", "ORDER_CANCELLED", "ORDER_REFUNDED", "UNKNOWN"],
+                "default": "UNKNOWN"
+            }
+        },
+        {
+            "name": "originatingOrderId",
+            "type": {
+                "type": "string",
+                "logicalType": "uuid"
+            }
+        },
+        {
+            "name": "originatingEventId",
+            "type": {
+                "type": "string",
+                "logicalType": "uuid"
+            }
+        },
+        {
+            "name": "originatingEventType",
+            "type": "string"
+        },
+        {
+            "name": "occurredAt",
+            "type": {
+                "type": "long",
+                "logicalType": "timestamp-millis"
+            }
+        }
+    ]
+}

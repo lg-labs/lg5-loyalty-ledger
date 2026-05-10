@@ -3,3 +3,7 @@
 # downstream consumers re-declare upstream schemas in their own message-model
 # because no shared `order-service-message-model` Maven artifact exists).
 com/lg/platform/order/kafka/
+# Outbound Avro generated from balance_update_cause.avsc +
+# customer_balance_updated.avsc (TASK-012). Owned by this service
+# (ADR-005); regeneration entry point is `make run-avro-model`.
+com/lg/platform/loyalty/kafka/
