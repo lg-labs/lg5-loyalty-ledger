@@ -1,0 +1,38 @@
+# Spectral lint config for the loyalty-ledger API specs.
+#
+# Extends the official OpenAPI + AsyncAPI rulesets shipped with
+# Spectral, with two repo-specific overrides:
+#
+#   * `operation-description` is bumped to `error` so every endpoint
+#     on the OpenAPI side carries a description (RULE: humans must be
+#     able to read the spec without spelunking source).
+#   * `loyalty-vendor-content-type` is a custom rule that fails when
+#     a 2xx response on an OpenAPI operation declares a content type
+#     other than `application/vnd.api.v1+json` (RULE-006).
+#
+# AsyncAPI side: the builtin `spectral:asyncapi` ruleset already
+# enforces channel descriptions and message/payload presence. No
+# extra overrides for now — keep the surface minimal.
+
+extends:
+  - spectral:oas
+  - spectral:asyncapi
+
+rules:
+  operation-description: error
+  operation-operationId: error
+  operation-tag-defined: error
+  info-contact: error
+  info-description: error
+
+  loyalty-vendor-content-type:
+    description: 2xx OpenAPI responses must declare `application/vnd.api.v1+json` (RULE-006).
+    message: '2xx response must use `application/vnd.api.v1+json` content type, found: {{value}}'
+    severity: error
+    given: $.paths[*][get,post,put,patch,delete].responses[?(@property.match(/^2/))].content
+    then:
+      function: enumeration
+      functionOptions:
+        values:
+          - application/vnd.api.v1+json
+      field: '@key'
