@@ -1,9 +1,11 @@
 package com.lg.platform.loyalty.container.data;
 
 import com.lg.platform.loyalty.application.outbox.model.OutboxMessage;
+import com.lg.platform.loyalty.application.ports.output.repository.MovementLedgerRepository;
 import com.lg.platform.loyalty.application.ports.output.repository.OutboxRepository;
 import com.lg.platform.loyalty.application.ports.output.repository.ProcessedInputEventRepository;
 import com.lg.platform.loyalty.container.boot.Bootstrap;
+import com.lg.platform.loyalty.domain.entity.Movement;
 import com.lg.platform.loyalty.domain.entity.ProcessedInputEvent;
 import com.lg.platform.loyalty.domain.valueobject.CustomerId;
 import com.lg.platform.loyalty.domain.valueobject.MovementId;
@@ -15,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.TestPropertySource;
 
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -55,6 +58,22 @@ class ProcessedInputEventAndOutboxRepositoryIT extends Bootstrap {
     @Autowired
     private OutboxRepository outboxRepository;
 
+    @Autowired
+    private MovementLedgerRepository movementLedgerRepository;
+
+    /**
+     * Persist a real {@link Movement} and return its id so dependent
+     * {@link ProcessedInputEvent} rows satisfy the
+     * {@code processed_input_event_movement_fk} FK
+     * (data-model.md §processed_input_event).
+     */
+    private MovementId aPersistedMovementId() {
+        final Movement saved = movementLedgerRepository.save(Movement.ofCredit(
+                CustomerId.random(), OrderId.random(), UUID.randomUUID(),
+                "OrderPaidEvent", ZonedDateTime.now(), 1));
+        return saved.getId();
+    }
+
     @Test
     void duplicate_event_type_id_raises_DataIntegrityViolationException() {
         final UUID sharedEventId = UUID.randomUUID();
@@ -62,13 +81,14 @@ class ProcessedInputEventAndOutboxRepositoryIT extends Bootstrap {
 
         processedInputEventRepository.save(ProcessedInputEvent.forMovementAppended(
                 sharedEventId, sharedEventType, OrderId.random(), CustomerId.random(),
-                MovementId.random()));
+                aPersistedMovementId()));
 
         // Second insert with the SAME (eventType, eventId) — different PK,
-        // different orderId/customerId — must collide on the unique index.
+        // different orderId/customerId, different (valid) movementId — must
+        // collide on the unique index BEFORE the FK is checked.
         final ProcessedInputEvent dup = ProcessedInputEvent.forMovementAppended(
                 sharedEventId, sharedEventType, OrderId.random(), CustomerId.random(),
-                MovementId.random());
+                aPersistedMovementId());
 
         assertThatThrownBy(() -> processedInputEventRepository.save(dup))
                 .isInstanceOf(DataIntegrityViolationException.class);
