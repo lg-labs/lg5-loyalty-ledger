@@ -1,6 +1,8 @@
 package com.lg.platform.loyalty.container.api.contract;
 
 import com.atlassian.oai.validator.OpenApiInteractionValidator;
+import com.atlassian.oai.validator.report.LevelResolver;
+import com.atlassian.oai.validator.report.ValidationReport;
 import com.atlassian.oai.validator.restassured.OpenApiValidationFilter;
 import io.restassured.filter.Filter;
 
@@ -75,6 +77,20 @@ public final class OpenApiContractFilter {
         }
         final OpenApiInteractionValidator validator =
                 OpenApiInteractionValidator.createForSpecificationUrl(spec.toUri().toString())
+                        .withLevelResolver(LevelResolver.create()
+                                // Ignore EVERY request-side validation key.
+                                // Rationale: the ITs deliberately send
+                                // malformed inputs (e.g. ErrorAdviceIT
+                                // sends a non-UUID customerId to exercise
+                                // the 400 surface). The whole point of
+                                // those tests is the SERVER's response
+                                // shape; a request-side validator that
+                                // pre-fails such requests would defeat
+                                // the test. We pin only the response
+                                // contract — that is the drift signal
+                                // we care about.
+                                .withLevel("validation.request", ValidationReport.Level.IGNORE)
+                                .build())
                         .build();
         return new OpenApiValidationFilter(validator);
     }
