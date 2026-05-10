@@ -115,7 +115,7 @@ work (M2-M3).
 
 ## TASK-005 — JPA entity + repository for `movement`
 
-- **Status:** in_progress
+- **Status:** done
 - **References:** REQ-013, REQ-014, RULE-008, ADR-004
 - **Depends on:** TASK-003, TASK-004
 - **Modules touched:** `lg5-loyalty-ledger-data-access`
@@ -125,6 +125,8 @@ work (M2-M3).
   - **Given** the `movement` table created by TASK-004 and the `Movement` aggregate from TASK-003
   - **When** a `@DataJpaTest` (or `Lg5TestBootPortNone` IT, RULE-012) inserts a `MovementJpaEntity` and reads it back
   - **Then** the entity is persisted with `@Enumerated(EnumType.STRING)` for `cause`, the JPA-side `version` field is present (RULE-008), the repository exposes only **read** methods + a `save(...)` that performs `INSERT` (no `update`/`delete` operations declared) honoring REQ-013, and a domain-mapper round-trip (`Movement` → `MovementJpaEntity` → `Movement`) preserves every field including `originatingEventId` (REQ-014).
+
+> Completed in commit <sha-placeholder>; `MovementJpaRepository` extends only `org.springframework.data.repository.Repository` (no delete/update generated), `MovementLedgerRepositoryIT` asserts round-trip + REQ-013 surface + REQ-004 `existsCreditFor` (5 tests).
 
 ## TASK-006 — JPA entity + repository for `customer_balance` (projection upsert)
 
