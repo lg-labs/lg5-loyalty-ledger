@@ -1,6 +1,7 @@
 package com.lg.platform.loyalty.container.api;
 
 import com.lg.platform.loyalty.application.ports.output.repository.CustomerBalanceRepository;
+import com.lg.platform.loyalty.container.api.contract.OpenApiContractFilter;
 import com.lg.platform.loyalty.container.boot.RestBootstrap;
 import com.lg.platform.loyalty.domain.entity.CustomerBalance;
 import com.lg.platform.loyalty.domain.valueobject.CustomerId;
@@ -44,6 +45,7 @@ class CustomerBalanceControllerIT extends RestBootstrap {
         customerBalanceRepository.save(seeded);
 
         RestAssured.given(requestSpecification)
+                .filter(OpenApiContractFilter.openApiValidator())
                 .accept("application/vnd.api.v1+json")
                 .when()
                 .get("/loyalty/customers/{customerId}/balance", customerId.getValue().toString())
@@ -67,6 +69,7 @@ class CustomerBalanceControllerIT extends RestBootstrap {
         customerBalanceRepository.save(seeded);
 
         RestAssured.given(requestSpecification)
+                .filter(OpenApiContractFilter.openApiValidator())
                 .accept("application/vnd.api.v1+json")
                 .when()
                 .get("/loyalty/customers/{customerId}/balance", customerId.getValue().toString())
@@ -95,6 +98,7 @@ class CustomerBalanceControllerIT extends RestBootstrap {
         assertThat(customerBalanceRepository.findById(new CustomerId(unknown))).isEmpty();
 
         RestAssured.given(requestSpecification)
+                .filter(OpenApiContractFilter.openApiValidator())
                 .accept("application/vnd.api.v1+json")
                 .when()
                 .get("/loyalty/customers/{customerId}/balance", unknown.toString())

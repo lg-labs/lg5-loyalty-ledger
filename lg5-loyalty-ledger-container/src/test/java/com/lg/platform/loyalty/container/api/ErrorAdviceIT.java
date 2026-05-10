@@ -1,6 +1,7 @@
 package com.lg.platform.loyalty.container.api;
 
 import com.lg.platform.loyalty.application.ports.input.LoyaltyLedgerQueryService;
+import com.lg.platform.loyalty.container.api.contract.OpenApiContractFilter;
 import com.lg.platform.loyalty.container.boot.RestBootstrap;
 import io.restassured.RestAssured;
 import org.junit.jupiter.api.Test;
@@ -82,6 +83,7 @@ class ErrorAdviceIT extends RestBootstrap {
     @Test
     void malformedUuidInPath_returns400_invalidRequest() {
         RestAssured.given(requestSpecification)
+                .filter(OpenApiContractFilter.openApiValidator())
                 .accept("application/vnd.api.v1+json")
                 .when()
                 .get("/loyalty/customers/not-a-uuid/balance")
@@ -100,6 +102,7 @@ class ErrorAdviceIT extends RestBootstrap {
                 .getBalance(Mockito.any());
 
         RestAssured.given(requestSpecification)
+                .filter(OpenApiContractFilter.openApiValidator())
                 .accept("application/vnd.api.v1+json")
                 .when()
                 .get("/loyalty/customers/{id}/balance", UUID.randomUUID().toString())

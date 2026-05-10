@@ -1,5 +1,6 @@
 package com.lg.platform.loyalty.container.api;
 
+import com.lg.platform.loyalty.container.api.contract.OpenApiContractFilter;
 import com.lg.platform.loyalty.container.boot.RestBootstrap;
 import com.lg.platform.loyalty.dataaccess.movement.entity.MovementJpaEntity;
 import com.lg.platform.loyalty.dataaccess.movement.repository.MovementJpaRepository;
@@ -111,6 +112,7 @@ class CustomerMovementsControllerIT extends RestBootstrap {
         seedMovements(customerId, N);
 
         RestAssured.given(requestSpecification)
+                .filter(OpenApiContractFilter.openApiValidator())
                 .accept("application/vnd.api.v1+json")
                 .when()
                 .get("/loyalty/customers/{customerId}/movements?page=999&size=20",
@@ -132,6 +134,7 @@ class CustomerMovementsControllerIT extends RestBootstrap {
         assertThat(movementJpaRepository.countByCustomerId(unknown)).isZero();
 
         RestAssured.given(requestSpecification)
+                .filter(OpenApiContractFilter.openApiValidator())
                 .accept("application/vnd.api.v1+json")
                 .when()
                 .get("/loyalty/customers/{customerId}/movements", unknown.toString())
