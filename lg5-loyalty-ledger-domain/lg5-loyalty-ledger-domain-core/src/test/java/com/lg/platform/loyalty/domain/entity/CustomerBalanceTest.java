@@ -22,13 +22,14 @@ class CustomerBalanceTest {
     }
 
     @Test
-    void applyDelta_withPositiveDelta_increasesBalance_andBumpsVersion() {
+    void applyDelta_withPositiveDelta_increasesBalance() {
         final CustomerBalance cb = CustomerBalance.empty(customerId);
 
         cb.applyDelta(15);
 
         assertThat(cb.getBalance()).isEqualTo(15L);
-        assertThat(cb.getVersion()).isEqualTo(1);
+        // Domain does NOT bump version; Hibernate owns @Version end-to-end.
+        assertThat(cb.getVersion()).isZero();
     }
 
     @Test
@@ -40,7 +41,7 @@ class CustomerBalanceTest {
         cb.applyDelta(-12);
 
         assertThat(cb.getBalance()).isEqualTo(-7L);
-        assertThat(cb.getVersion()).isEqualTo(2);
+        assertThat(cb.getVersion()).isZero();
     }
 
     @Test
@@ -59,6 +60,7 @@ class CustomerBalanceTest {
         cb.applyDelta(50);
 
         assertThat(cb.getBalance()).isZero();
-        assertThat(cb.getVersion()).isEqualTo(3);
+        // Version remains 0 at the domain level (Hibernate owns it).
+        assertThat(cb.getVersion()).isZero();
     }
 }

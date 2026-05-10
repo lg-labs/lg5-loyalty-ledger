@@ -34,8 +34,16 @@ public class CustomerBalance extends AggregateRoot<CustomerId> {
     }
 
     /**
-     * Adds {@code delta} to the balance and bumps {@code version}.
+     * Adds {@code delta} to the balance and refreshes {@code lastUpdatedAt}.
      * <p>The result may be negative (REQ-007).
+     *
+     * <p>Intentionally does NOT mutate {@code version}: that field is a
+     * passive optimistic-locking token whose lifecycle is owned end-to-end
+     * by Hibernate's {@code @Version} on the JPA entity. Bumping it here
+     * would conflict with Hibernate's WHERE-clause check on every UPDATE
+     * and break optimistic locking. (Pattern matches
+     * {@code food-ordering-system}; RULE-008 requires <em>exposing</em>
+     * a {@code version} field, not incrementing it in the domain.)
      *
      * @throws LoyaltyLedgerDomainException if {@code delta == 0}.
      */
@@ -46,7 +54,6 @@ public class CustomerBalance extends AggregateRoot<CustomerId> {
         }
         this.balance += delta;
         this.lastUpdatedAt = ZonedDateTime.now();
-        this.version++;
     }
 
     public long getBalance() {
