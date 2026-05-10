@@ -2,14 +2,14 @@
 kind: adr
 feature: 001-loyalty-ledger
 adr-id: ADR-002
-status: accepted
+status: superseded
 date: 2026-05-10
-description: Reuse order-service-message-model for inbound Avro contracts (OrderPaid, OrderCancelled, OrderRefunded) instead of redeclaring schemas locally.
+description: Reuse order-service-message-model for inbound Avro contracts (OrderPaid, OrderCancelled, OrderRefunded) instead of redeclaring schemas locally. SUPERSEDED 2026-05-10 by local-redeclaration pattern (matches food-ordering-system).
 ---
 
 # ADR-002 — Reuse `order-service-message-model` for inbound Avro contracts
 
-- **Status:** Accepted
+- **Status:** Superseded by [§Status update 2026-05-10](#status-update-2026-05-10) (originally Accepted)
 - **Date:** 2026-05-10
 - **Deciders:** lglabs (PO), lglabs (tech lead)
 - **Consulted:** order-service team (assumed; ownership of the schemas)
@@ -115,3 +115,62 @@ No constitutional violations.
 - [x] Constitutional impact section names every relevant `must` rule
       (RULE-007, 018).
 - [x] Any `must` override is time-boxed — N/A (no overrides).
+
+## Status update — 2026-05-10
+
+**Status flips from `Accepted` to `Superseded`.** During M2 implementation
+(TASK-008) the assumed Maven coordinate
+`com.lg.platform:order-service-message-model:<known-good-version>` was
+sought in:
+
+- the cloned reference codebases under `/tmp/lg5-study/`
+  (`food-ordering-system`, `lg5-spring`, `blank-service`),
+- the local Maven cache (`~/.m2/repository/`),
+- the framework parent (`com.lg5.spring:lg5-spring-parent:1.0.0-alpha.af81c7c`).
+
+**Finding:** no such artifact exists. The cross-service shared module
+`order-service-message-model` was never published. The actual pattern in
+the only working reference (`food-ordering-system`) is the
+**opposite** of ADR-002's premise: every consumer service
+(`payment-service`, `restaurant-service`, `customer-service`,
+`order-service` itself when consuming) **re-declares** the upstream
+`.avsc` files inside its own local `*-message-model/src/main/resources/avro/`,
+with identical content. There is no central "platform-events" artifact.
+
+**Decision (revised):** mirror the food-ordering-system convention.
+The three inbound schemas (`OrderPaidAvroModel`, `OrderCancelledAvroModel`,
+`OrderRefundedAvroModel`) are declared locally in
+`lg5-loyalty-ledger-message-model/src/main/resources/avro/` (commit
+implementing TASK-008), with namespace `com.lg.platform.order.kafka.avro.model`
+to make the cross-service ownership boundary explicit at the package
+level. Generated Java sources land under `src/main/java/com/lg/platform/order/kafka/`
+and are gitignored (regenerated on every build via the parent's
+`avro-maven-plugin`).
+
+**Trade-offs of the revised decision:** all the "negative" consequences
+of the previously-rejected "Redeclare schemas locally" alternative are
+now in scope:
+
+- Schema divergence with upstream is possible (same risk
+  `payment-service` etc. carry today). Mitigated operationally by
+  schema-registry BACKWARD compatibility (REQ-011, ADR-005) and by the
+  ATDD module asserting field-level decode (TASK-019).
+- Manual sync if `order-service` adds a field we want to consume.
+
+**What does NOT change:**
+
+- All inbound payloads remain Avro `SpecificRecordBase` (RULE-007 honored).
+- Topic names, partitioning, BACKWARD compatibility mode unchanged.
+- The "we own the outbound schema" half (ADR-005) is unaffected.
+
+**Forward path:** if a third consumer of these events appears or the
+platform standardizes a shared "platform-events" repo (see "Alternatives
+considered" §3 above), this ADR can be revisited and re-elevated to
+`Accepted` against that new artifact.
+
+References:
+- See `data-model.md` §"Avro schemas (Inbound)" — wording updated in
+  the same TASK-008 commit to match this revised decision.
+- See `tasks.md` TASK-008 — the Acceptance criterion was reworded to
+  reference the local `.avsc` declarations rather than an external
+  Maven dependency.

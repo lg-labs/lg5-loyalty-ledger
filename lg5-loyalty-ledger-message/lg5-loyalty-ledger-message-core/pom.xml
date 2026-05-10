@@ -31,6 +31,18 @@
             <groupId>com.lg5.spring.kafka</groupId>
             <artifactId>lg5-spring-kafka-consumer</artifactId>
         </dependency>
+        <!-- unit test -->
+        <dependency>
+            <groupId>com.lg5.jvm</groupId>
+            <artifactId>lg5-jvm-unit-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <version>3.26.3</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
 </project>

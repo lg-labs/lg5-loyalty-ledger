@@ -1,0 +1,5 @@
+# Generated Avro classes (regenerated via `make run-avro-model`).
+# Re-declared locally per ADR-002 revision (food-ordering-system convention:
+# downstream consumers re-declare upstream schemas in their own message-model
+# because no shared `order-service-message-model` Maven artifact exists).
+com/lg/platform/order/kafka/

@@ -161,16 +161,18 @@ work (M2-M3).
 
 ## TASK-008 — Mapper Avro inbound → domain (`OrderPaid|Cancelled|Refunded` → input port command)
 
-- **Status:** todo
-- **References:** REQ-001, REQ-004, REQ-014, RULE-007, ADR-002
+- **Status:** done
+- **References:** REQ-001, REQ-004, REQ-014, RULE-007, ADR-002 (revised 2026-05-10)
 - **Depends on:** TASK-003
-- **Modules touched:** `lg5-loyalty-ledger-message-core`
+- **Modules touched:** `lg5-loyalty-ledger-message-core`, `lg5-loyalty-ledger-message-model` (local `.avsc`), `lg5-loyalty-ledger-domain-core` (`LoyaltyPoints`), `lg5-loyalty-ledger-application-service` (input-port command + port interface)
 - **Skill:** `lg5-kafka-avro`
-- **Command / Subagent:** (none — direct authoring; depends on `order-service-message-model` Maven artifact)
+- **Command / Subagent:** (none — direct authoring; inbound Avro schemas declared locally per ADR-002 revision)
 - **Acceptance:**
-  - **Given** the three inbound Avro classes (`OrderPaidAvroModel`, `OrderCancelledAvroModel`, `OrderRefundedAvroModel`) consumed via the `order-service-message-model` Maven dependency declared in `lg5-loyalty-ledger-message-model/pom.xml` (ADR-002)
+  - **Given** the three inbound Avro classes (`OrderPaidAvroModel`, `OrderCancelledAvroModel`, `OrderRefundedAvroModel`) consumed from local `.avsc` declarations under `lg5-loyalty-ledger-message-model/src/main/resources/avro/` (per ADR-002 revision; mirrors food-ordering-system convention)
   - **When** unit tests feed each Avro instance through the mapper
   - **Then** the produced input-port command (one per event type) carries `customerId`, `orderId`, `eventId`, `eventType` (string literal `"OrderPaid"`/`"OrderCancelled"`/`"OrderRefunded"`), `eventReceivedAt`, and (for `OrderPaid` only) `paidAmount` as a `Money` value object built from the Avro `decimal`; no Spring annotations appear on the mapper class (RULE-005).
+
+> Completed in commit <sha-placeholder>; 4 mapper unit tests + 5 `LoyaltyPoints` unit tests green. ADR-002 superseded — local re-declaration pattern adopted; no `order-service-message-model` external Maven artifact exists in the platform.
 
 ## TASK-009 — Kafka listener + config for `order-paid`
 

@@ -167,20 +167,25 @@ Endpoints (locked here, refined in `tasks.md`):
 
 ## Avro schemas (`lg5-loyalty-ledger-message-model`)
 
-### Inbound (consumed; **owned by `order-service`**, see ADR-002)
+### Inbound (consumed; **owned by `order-service`**, locally re-declared per ADR-002 revision)
 
-| Topic              | Schema (reused from `order-service-message-model`) | Compatibility |
+| Topic              | Schema (declared locally in `lg5-loyalty-ledger-message-model/src/main/resources/avro/`) | Compatibility |
 |--------------------|----------------------------------------------------|---------------|
-| `order-paid`       | `OrderPaidAvroModel`                               | `BACKWARD` (registry-side) |
-| `order-cancelled`  | `OrderCancelledAvroModel`                          | `BACKWARD` |
-| `order-refunded`   | `OrderRefundedAvroModel`                           | `BACKWARD` |
+| `order-paid`       | `OrderPaidAvroModel` (`order_paid.avsc`)            | `BACKWARD` (registry-side) |
+| `order-cancelled`  | `OrderCancelledAvroModel` (`order_cancelled.avsc`)  | `BACKWARD` |
+| `order-refunded`   | `OrderRefundedAvroModel` (`order_refunded.avsc`)    | `BACKWARD` |
 
-We assume each upstream record carries at minimum:
-`messageId: string (uuid)`, `orderId: string (uuid)`,
-`customerId: string (uuid)`, `paidAmount: bytes (decimal)` (for
-`OrderPaidAvroModel` only — cancel/refund need only the order id),
-`createdAt: long (timestamp-millis)`. Exact field set is pinned in the
-build by the upstream Maven dependency version (ADR-002).
+Each upstream record carries (matches the `.avsc` shipped in
+TASK-008): `messageId: string (uuid)`, `customerId: string (uuid)`,
+`orderId: string (uuid)`, `paidAmount: bytes (decimal precision=10
+scale=2)` (for `OrderPaidAvroModel` only — cancel/refund need only
+the order id), `createdAt: long (timestamp-millis)`. Namespace is
+`com.lg.platform.order.kafka.avro.model` to make the cross-service
+ownership boundary explicit at the package level. ADR-002 was
+**superseded** in favor of the per-consumer local re-declaration
+pattern that the entire `food-ordering-system` reference codebase
+follows; see `adr/ADR-002-reuse-order-message-model.md` §"Status
+update — 2026-05-10".
 
 ### Outbound (produced; **owned by us**, see ADR-005)
 
