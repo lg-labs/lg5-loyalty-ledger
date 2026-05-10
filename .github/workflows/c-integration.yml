@@ -277,6 +277,17 @@ jobs:
         with:
           github-token: ${{ secrets.PKG_GITHUB_TOKEN }}
 
+      # Install sibling modules into the runner's local ~/.m2 so that
+      # `make run-atdd-module` (which runs `mvn -pl <atdd>`) can resolve
+      # them. The canonical cache key is shared across all jobs and
+      # only the first finishing job (`setup`) writes; downstream jobs
+      # see cache-hit and don't persist their installs. Cheapest fix
+      # without diverging the canonical cache strategy is a quick
+      # skip-tests install on this runner. Mirrors how the legacy
+      # `it` job worked pre-feature-003.
+      - name: Install sibling modules (skip tests)
+        run: make install-skip-test
+
       - name: Run acceptance tests using Makefile
         run: make run-atdd-module
 
