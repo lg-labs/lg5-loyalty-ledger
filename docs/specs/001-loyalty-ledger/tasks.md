@@ -335,7 +335,7 @@ work (M2-M3).
 
 ## TASK-019 — ATDD scenarios: one per REQ (or equivalence class)
 
-- **Status:** todo
+- **Status:** done
 - **References:** REQ-001..REQ-015, ADR-003, ADR-004, ADR-005, RULE-012, RULE-013
 - **Depends on:** TASK-011, TASK-013, TASK-015, TASK-016, TASK-017, TASK-018
 - **Modules touched:** `lg5-loyalty-ledger-acceptance-test`
