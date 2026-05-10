@@ -66,7 +66,14 @@ class OrderPaidKafkaListenerIT extends Bootstrap {
     private LoyaltyLedgerInputPort loyaltyLedgerInputPort;
 
     @Test
-    void receive_invokes_input_port_exactly_once_with_mapped_command() {
+    void receive_invokes_input_port_exactly_once_with_mapped_command() throws Exception {
+        // Framework's ConfluentKafkaContainerCustomConfig sets two waitingFor()
+        // strategies on the SR container, the second of which (forListeningPort)
+        // overrides the first (forHttp). Result: the container is "ready" as
+        // soon as the port is bound, but the SR app inside hasn't finished
+        // initialising. Poll /subjects ourselves before producing.
+        awaitSchemaRegistryReady();
+
         final UUID eventId = UUID.randomUUID();
         final UUID customerId = UUID.randomUUID();
         final UUID orderId = UUID.randomUUID();
@@ -79,13 +86,13 @@ class OrderPaidKafkaListenerIT extends Bootstrap {
                 .build();
 
         try (final KafkaProducer<String, Object> producer = newAvroProducer()) {
-            producer.send(new ProducerRecord<>(orderPaidTopic, customerId.toString(), msg));
+            producer.send(new ProducerRecord<>(orderPaidTopic, customerId.toString(), msg)).get();
             producer.flush();
         }
 
         final ArgumentCaptor<LoyaltyLedgerCommand> captor =
                 ArgumentCaptor.forClass(LoyaltyLedgerCommand.class);
-        await().atMost(30, TimeUnit.SECONDS)
+        await().atMost(60, TimeUnit.SECONDS)
                 .untilAsserted(() -> verify(loyaltyLedgerInputPort, times(1)).process(captor.capture()));
 
         final LoyaltyLedgerCommand cmd = captor.getValue();
@@ -96,6 +103,20 @@ class OrderPaidKafkaListenerIT extends Bootstrap {
         assertThat(op.orderId().getValue()).isEqualTo(orderId);
         assertThat(op.paidAmount().getAmount()).isEqualByComparingTo(new BigDecimal("12.95"));
         assertThat(op.eventType()).isEqualTo("OrderPaid");
+    }
+
+    private void awaitSchemaRegistryReady() {
+        final java.net.http.HttpClient http = java.net.http.HttpClient.newHttpClient();
+        final java.net.http.HttpRequest req = java.net.http.HttpRequest.newBuilder()
+                .uri(java.net.URI.create(schemaRegistryUrl + "/subjects"))
+                .timeout(java.time.Duration.ofSeconds(2))
+                .GET()
+                .build();
+        await().atMost(60, TimeUnit.SECONDS)
+                .pollInterval(1, TimeUnit.SECONDS)
+                .ignoreExceptions()
+                .until(() -> http.send(req, java.net.http.HttpResponse.BodyHandlers.discarding())
+                        .statusCode() == 200);
     }
 
     private KafkaProducer<String, Object> newAvroProducer() {
