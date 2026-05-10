@@ -49,7 +49,10 @@ import static org.mockito.Mockito.verify;
         "testcontainers.kafka.enabled=true",
         "spring.datasource.url=",
         "spring.datasource.username=",
-        "spring.datasource.password="
+        "spring.datasource.password=",
+        "scheduling.enabled=true",
+        "loyalty-ledger-service.outbox-scheduler-fixed-rate=200",
+        "loyalty-ledger-service.outbox-scheduler-initial-delay=200"
         // NOTE: do NOT add per-IT-unique property overrides here. The
         // Spring TestContext cache key is derived from the full
         // @TestPropertySource set, so any IT-local property string would
@@ -57,10 +60,16 @@ import static org.mockito.Mockito.verify;
         // network) per IT class — which collides with the previous
         // class's still-tearing-down `kafka` network alias and breaks
         // the SR container's KafkaStore boot (Connection reset →
-        // /subjects 200 wait timeout). All Kafka listener ITs in this
-        // package therefore declare the *same* property set so they
-        // share one context and one container set across the whole
-        // module's IT phase.
+        // /subjects 200 wait timeout). All Kafka container ITs in
+        // this package (listeners + publisher, TASK-013) therefore
+        // declare the *same* property set so they share one context
+        // and one container set across the whole module's IT phase.
+        //
+        // The scheduler is left always-on at 200ms in the shared block
+        // because the publisher IT (TASK-013) needs it; in this
+        // listener IT the input port is @MockitoBean → no outbox
+        // rows are ever written → the scheduler iterates an empty
+        // list every 200ms (NO-OP).
 })
 class OrderPaidKafkaListenerIT extends Bootstrap {
 

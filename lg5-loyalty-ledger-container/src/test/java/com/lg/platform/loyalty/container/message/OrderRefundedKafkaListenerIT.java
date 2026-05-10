@@ -42,11 +42,16 @@ import static org.mockito.Mockito.verify;
         "testcontainers.kafka.enabled=true",
         "spring.datasource.url=",
         "spring.datasource.username=",
-        "spring.datasource.password="
+        "spring.datasource.password=",
+        "scheduling.enabled=true",
+        "loyalty-ledger-service.outbox-scheduler-fixed-rate=200",
+        "loyalty-ledger-service.outbox-scheduler-initial-delay=200"
         // See OrderPaidKafkaListenerIT for why no per-IT-unique
         // properties: identical @TestPropertySource set across all
-        // listener ITs ⇒ shared Spring context ⇒ shared Testcontainers
-        // (no `kafka` network-alias collisions).
+        // kafka container ITs (listeners + TASK-013 publisher) ⇒
+        // shared Spring context ⇒ shared Testcontainers (no `kafka`
+        // network-alias collisions). Scheduler always-on is harmless
+        // here — input port is mocked, no outbox rows are written.
 })
 class OrderRefundedKafkaListenerIT extends Bootstrap {
 

@@ -257,7 +257,7 @@ work (M2-M3).
 
 ## TASK-013 — Outbox scheduler + Kafka producer wiring
 
-- **Status:** todo
+- **Status:** done
 - **References:** REQ-011, REQ-015, RULE-007, RULE-008, RULE-011, RULE-014, ADR-001
 - **Depends on:** TASK-007, TASK-012
 - **Modules touched:** `lg5-loyalty-ledger-application-service`, `lg5-loyalty-ledger-message-core`
