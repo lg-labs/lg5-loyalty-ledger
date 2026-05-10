@@ -19,7 +19,7 @@ description: 20 atomic, verifiable TASK-NNN derived from plan.md. Consumed one-a
 ```
                                 ┌── TASK-005 (movement JPA) ──┐
 TASK-001  ──►  TASK-002  ──►  TASK-004 ──┤                              ├──┐
-(scaffold)    (parent +       (Flyway   │── TASK-006 (balance JPA)  ──┤  │
+(scaffold)    (parent +       (Liquibase│── TASK-006 (balance JPA)  ──┤  │
               build green)    DDL)      │                              │  │
                                         └── TASK-007 (processed +     ─┤  │
                                             outbox JPA)                │  │
@@ -98,9 +98,9 @@ work (M2-M3).
 
 > Completed in commit <sha-placeholder>; 19 test methods green; RULE-003/005/008/016 audited.
 
-## TASK-004 — Flyway DDL: `loyalty` schema + 4 tables + Postgres ENUMs + indexes
+## TASK-004 — Liquibase DDL: `loyalty` schema + 4 tables + Postgres ENUMs + indexes
 
-- **Status:** todo
+- **Status:** done
 - **References:** REQ-003, REQ-006, REQ-007, REQ-009, REQ-010, REQ-013, REQ-014, REQ-015, RULE-008, ADR-003, ADR-004
 - **Depends on:** TASK-002
 - **Modules touched:** `lg5-loyalty-ledger-data-access`
@@ -108,12 +108,14 @@ work (M2-M3).
 - **Command / Subagent:** (none — direct SQL authoring)
 - **Acceptance:**
   - **Given** `data-model.md` §JPA tables as the source of truth
-  - **When** the migration `V1__init_loyalty_schema.sql` is applied to a Testcontainers Postgres in an integration test
+  - **When** the Liquibase changelog `db/changelog/db.changelog-master.yaml` (with `ddl-loyalty-v.0.0.1.yaml` included) is applied to a Testcontainers Postgres in an integration test
   - **Then** the `loyalty` schema exists; tables `movement`, `customer_balance`, `processed_input_event`, `outbox` exist with the columns, types, defaults, and indexes specified in `data-model.md` (including `idx_movement_customer_appended` on `(customer_id, appended_at DESC, id DESC)` for REQ-010, the **unique constraint `uq_processed_event_type_id` on `(originating_event_type, originating_event_id)`** for REQ-003/REQ-006, the `loyalty_cause` ENUM (`ORDER_PAID, ORDER_CANCELLED, ORDER_REFUNDED`), the `processed_input_outcome` ENUM, and the `outbox_status` ENUM); a no-op `down` is documented in the file header.
+
+> Completed in commit <sha-placeholder>; Liquibase changelog applied by `LiquibaseMigrationIT` (11 assertions) on a Testcontainers Postgres in CI; deviation: framework ships Liquibase (not Flyway) — TASK-004 wording corrected accordingly.
 
 ## TASK-005 — JPA entity + repository for `movement`
 
-- **Status:** todo
+- **Status:** in_progress
 - **References:** REQ-013, REQ-014, RULE-008, ADR-004
 - **Depends on:** TASK-003, TASK-004
 - **Modules touched:** `lg5-loyalty-ledger-data-access`
@@ -126,7 +128,7 @@ work (M2-M3).
 
 ## TASK-006 — JPA entity + repository for `customer_balance` (projection upsert)
 
-- **Status:** todo
+- **Status:** in_progress
 - **References:** REQ-007, REQ-008, REQ-009, RULE-008, RULE-016, ADR-004
 - **Depends on:** TASK-003, TASK-004
 - **Modules touched:** `lg5-loyalty-ledger-data-access`
@@ -139,7 +141,7 @@ work (M2-M3).
 
 ## TASK-007 — JPA entity + repository for `processed_input_event` + `outbox`
 
-- **Status:** todo
+- **Status:** in_progress
 - **References:** REQ-003, REQ-005, REQ-006, REQ-014, REQ-015, RULE-008, ADR-003
 - **Depends on:** TASK-003, TASK-004
 - **Modules touched:** `lg5-loyalty-ledger-data-access`
