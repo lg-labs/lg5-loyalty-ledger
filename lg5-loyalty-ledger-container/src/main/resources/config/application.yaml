@@ -1,0 +1,87 @@
+info:
+  app:
+    name: ${spring.application.name}
+    version: "@project.version@"
+
+server:
+  port: 8181
+
+logging:
+  level:
+    com.lg.platform.loyalty: INFO
+    org.apache.kafka: ERROR
+    io.confluent.kafka: ERROR
+    org.apache: ERROR
+
+spring:
+  main:
+    banner-mode: "off"
+  application:
+    name: lg5-loyalty-ledger
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+  datasource:
+    url: jdbc:postgresql://localhost:54322/loyalty_ledger?currentSchema=loyalty&binaryTransfer=true&reWriteBatchedInserts=true&stringtype=unspecified
+    username: sa
+    password: sa
+  liquibase:
+    liquibase-schema: public
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+
+scheduling:
+  enabled: true
+
+# Per-service business config (RULE-014)
+loyalty-ledger-service:
+  outbox-scheduler-fixed-rate: 10000
+  outbox-scheduler-initial-delay: 10000
+  topics:
+    inbound:
+      order-paid: order-paid
+      order-cancelled: order-cancelled
+      order-refunded: order-refunded
+    outbound:
+      customer-balance-updated: customer-balance-updated
+  consumer-groups:
+    order-paid: lg5-loyalty-ledger-order-paid
+    order-cancelled: lg5-loyalty-ledger-order-cancelled
+    order-refunded: lg5-loyalty-ledger-order-refunded
+
+# Framework Kafka config prefixes (RULE-014)
+kafka-config:
+  bootstrap-servers: localhost:9092,localhost:9093,localhost:9094
+  schema-registry-url-key: schema.registry.url
+  schema-registry-url: http://localhost:8081
+  num-of-partitions: 3
+  replication-factor: 3
+
+kafka-producer-config:
+  key-serializer-class: org.apache.kafka.common.serialization.StringSerializer
+  value-serializer-class: io.confluent.kafka.serializers.KafkaAvroSerializer
+  compression-type: snappy
+  acks: all
+  batch-size: 16384
+  batch-size-boost-factor: 100
+  linger-ms: 5
+  request-timeout-ms: 60000
+  retry-count: 5
+
+kafka-consumer-config:
+  key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+  value-deserializer: io.confluent.kafka.serializers.KafkaAvroDeserializer
+  auto-offset-reset: earliest
+  specific-avro-reader-key: specific.avro.reader
+  specific-avro-reader: true
+  batch-listener: true
+  auto-startup: true
+  concurrency-level: 3
+  session-timeout-ms: 10000
+  heartbeat-interval-ms: 3000
+  max-poll-interval-ms: 300000
+  max-poll-records: 500
+  max-partition-fetch-bytes-default: 1048576
+  max-partition-fetch-bytes-boost-factor: 1
+  poll-timeout-ms: 150

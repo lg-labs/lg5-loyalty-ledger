@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.lg.platform.loyalty</groupId>
+        <artifactId>lg5-loyalty-ledger-message</artifactId>
+        <version>1.0.0-alpha</version>
+    </parent>
+
+    <artifactId>lg5-loyalty-ledger-message-core</artifactId>
+
+    <dependencies>
+        <!-- Implements OUTPUT ports from application service layer -->
+        <dependency>
+            <groupId>com.lg.platform.loyalty</groupId>
+            <artifactId>lg5-loyalty-ledger-application-service</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.lg.platform.loyalty</groupId>
+            <artifactId>lg5-loyalty-ledger-message-model</artifactId>
+        </dependency>
+        <!-- producer -->
+        <dependency>
+            <groupId>com.lg5.spring.kafka</groupId>
+            <artifactId>lg5-spring-kafka-producer</artifactId>
+        </dependency>
+        <!-- consumer -->
+        <dependency>
+            <groupId>com.lg5.spring.kafka</groupId>
+            <artifactId>lg5-spring-kafka-consumer</artifactId>
+        </dependency>
+        <!-- unit test -->
+        <dependency>
+            <groupId>com.lg5.jvm</groupId>
+            <artifactId>lg5-jvm-unit-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <version>3.26.3</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+</project>

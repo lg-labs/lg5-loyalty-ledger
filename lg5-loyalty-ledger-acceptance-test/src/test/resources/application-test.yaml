@@ -1,0 +1,76 @@
+spring:
+  application:
+    name: lg5-loyalty-ledger-acceptance-test
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+  # CRITICAL: blank the production datasource URL/username/password so
+  # the testcontainer's @ServiceConnection auto-binding wins. The
+  # production application.yaml (shipped from lg5-loyalty-ledger-container,
+  # which is on the ATDD classpath as a runtime dep) hard-codes
+  # `spring.datasource.url=jdbc:postgresql://localhost:54322/loyalty_ledger`,
+  # and Spring Boot resolves explicit `spring.datasource.*` BEFORE
+  # @ServiceConnection, so without these blanks the Cucumber context
+  # tries to talk to the developer's local Postgres on 54322 (which
+  # is absent on CI runners) and Liquibase aborts context startup
+  # with `Connection refused`. Mirrors the per-IT @TestPropertySource
+  # blanks in CustomerMovementsControllerIT / OrderPaidKafkaListenerIT.
+  datasource:
+    url: ""
+    username: ""
+    password: ""
+
+# RULE-012: scheduler off in test profile (ATDD scenarios trigger
+# the outbox flush manually via the OutboxScheduler bean to avoid
+# timing-dependent assertions).
+scheduling:
+  enabled: false
+
+# RULE-013: every Testcontainer is opt-in. The ATDD runner imports
+# TestContainersLoader, which gates each container by these
+# properties. The ATDD suite always needs Postgres + Kafka (+SR)
+# wired because the loaded SpringBootApplication wires JPA and
+# Kafka beans eagerly; flipping these to `false` would crash
+# Hibernate at context startup. Wiremock stays opt-in (off by
+# default; scenarios needing the schema-registry HTTP stub flip
+# it on via @TestPropertySource on the relevant runner).
+testcontainers:
+  postgres:
+    enabled: true
+  kafka:
+    enabled: true
+  wiremock:
+    enabled: false
+
+# AppCustomContainer (food-ordering pattern that bakes the app
+# into a docker image) is intentionally NOT used here. TASK-018
+# uses the lighter Lg5TestBootPortNone in-process pattern; the
+# image name is only set so any framework code path that reads
+# `application.image.name` does not NPE.
+application:
+  image:
+    name: lg5-loyalty-ledger
+  traces:
+    console:
+      enabled: false
+    file:
+      enabled: false
+
+# Wiremock convention from the framework: the ATDD scenario can
+# point any third-party HTTP integration at the stub by binding
+# the property under `wiremock.config.url`. We default it to a
+# placeholder; the schema-registry stub scenarios override it.
+wiremock:
+  config:
+    folder: "wiremock/placeholder/template.json"
+    url: "third.jsonplaceholder.url"
+    port: 7070
+
+logging:
+  level:
+    com.lg.platform.loyalty: INFO
+    com.lg5.spring.kafka: WARN
+    org.apache.kafka: ERROR
+    io.confluent.kafka: ERROR
+    org.testcontainers: WARN

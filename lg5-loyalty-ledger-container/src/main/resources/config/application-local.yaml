@@ -1,0 +1,23 @@
+info:
+  app:
+    name: ${spring.application.name}
+    version: "@project.version@"
+
+server:
+  port: 8181
+
+spring:
+  application:
+    name: lg5-loyalty-ledger
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+  datasource:
+    url: jdbc:postgresql://localhost:54322/loyalty_ledger?currentSchema=loyalty&binaryTransfer=true&reWriteBatchedInserts=true&stringtype=unspecified
+    username: sa
+    password: sa
+  liquibase:
+    liquibase-schema: public
+    change-log: classpath:db/changelog/db.changelog-master.yaml

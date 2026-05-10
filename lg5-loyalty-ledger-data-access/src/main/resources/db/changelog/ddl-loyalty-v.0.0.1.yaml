@@ -1,0 +1,192 @@
+# DDL v0.0.1 — feature 001-loyalty-ledger
+#
+# Creates the `loyalty` schema with the four persistent tables, three Postgres
+# ENUMs, and four indexes that materialize the data model in
+# docs/specs/001-loyalty-ledger/data-model.md (§232-358).
+#
+# Idempotency notes:
+#  - CREATE TYPE wrapped in DO $$ ... EXCEPTION WHEN duplicate_object $$ to
+#    survive re-runs on a non-clean DB (e.g. when a sibling service in the
+#    same DB created the type in `public`).
+#  - Liquibase tracks changesets in DATABASECHANGELOG; the schema/table
+#    creates are themselves naturally idempotent against the changelog.
+#
+# No-op down: Liquibase rollback is not configured; the spec for v1 does not
+# include a down migration (PRD §6 — schema evolution out-of-scope), and the
+# framework uses Liquibase forward-only migrations (cf. food-ordering-system
+# restaurant-service/ddl-restaurant-v.0.0.1.yaml).
+
+databaseChangeLog:
+  - changeSet:
+      id: loyalty-001-create-schema
+      author: lglabs
+      changes:
+        - sql:
+            sql: |
+              CREATE SCHEMA IF NOT EXISTS loyalty;
+            splitStatements: true
+            stripComments: true
+
+  - changeSet:
+      id: loyalty-002-create-enum-loyalty-cause
+      author: lglabs
+      changes:
+        - sql:
+            sql: |
+              DO $$ BEGIN
+                CREATE TYPE loyalty_cause AS ENUM ('ORDER_PAID', 'ORDER_CANCELLED', 'ORDER_REFUNDED');
+              EXCEPTION WHEN duplicate_object THEN NULL;
+              END $$;
+            splitStatements: false
+            stripComments: true
+
+  - changeSet:
+      id: loyalty-003-create-enum-processed-input-outcome
+      author: lglabs
+      changes:
+        - sql:
+            sql: |
+              DO $$ BEGIN
+                CREATE TYPE processed_input_outcome AS ENUM ('MOVEMENT_APPENDED', 'NOOP_ZERO_CREDIT', 'NOOP_DEBIT_WITHOUT_CREDIT');
+              EXCEPTION WHEN duplicate_object THEN NULL;
+              END $$;
+            splitStatements: false
+            stripComments: true
+
+  - changeSet:
+      id: loyalty-004-create-enum-outbox-status
+      author: lglabs
+      changes:
+        - sql:
+            sql: |
+              DO $$ BEGIN
+                CREATE TYPE outbox_status AS ENUM ('STARTED', 'COMPLETED', 'FAILED');
+              EXCEPTION WHEN duplicate_object THEN NULL;
+              END $$;
+            splitStatements: false
+            stripComments: true
+
+  - changeSet:
+      id: loyalty-005-create-table-movement
+      author: lglabs
+      changes:
+        - sql:
+            sql: |
+              CREATE TABLE loyalty.movement (
+                id                              uuid                     NOT NULL,
+                customer_id                     uuid                     NOT NULL,
+                delta                           integer                  NOT NULL,
+                cause                           loyalty_cause            NOT NULL,
+                originating_order_id            uuid                     NOT NULL,
+                originating_event_id            uuid                     NOT NULL,
+                originating_event_type          varchar(64)              NOT NULL,
+                originating_event_received_at   timestamp with time zone NOT NULL,
+                appended_at                     timestamp with time zone NOT NULL DEFAULT now(),
+                version                         integer                  NOT NULL DEFAULT 0,
+                CONSTRAINT movement_pkey PRIMARY KEY (id),
+                CONSTRAINT movement_delta_nonzero CHECK (delta <> 0)
+              );
+            splitStatements: false
+            stripComments: true
+
+  - changeSet:
+      id: loyalty-006-create-table-customer-balance
+      author: lglabs
+      changes:
+        - sql:
+            sql: |
+              CREATE TABLE loyalty.customer_balance (
+                customer_id        uuid                     NOT NULL,
+                balance            bigint                   NOT NULL DEFAULT 0,
+                last_updated_at    timestamp with time zone NOT NULL DEFAULT now(),
+                version            integer                  NOT NULL DEFAULT 0,
+                CONSTRAINT customer_balance_pkey PRIMARY KEY (customer_id)
+              );
+            splitStatements: false
+            stripComments: true
+
+  - changeSet:
+      id: loyalty-007-create-table-processed-input-event
+      author: lglabs
+      changes:
+        - sql:
+            sql: |
+              CREATE TABLE loyalty.processed_input_event (
+                id                          uuid                     NOT NULL,
+                originating_event_id        uuid                     NOT NULL,
+                originating_event_type      varchar(64)              NOT NULL,
+                originating_order_id        uuid                     NOT NULL,
+                originating_customer_id     uuid                     NOT NULL,
+                received_at                 timestamp with time zone NOT NULL DEFAULT now(),
+                outcome                     processed_input_outcome  NOT NULL,
+                movement_id                 uuid                     NULL,
+                version                     integer                  NOT NULL DEFAULT 0,
+                CONSTRAINT processed_input_event_pkey PRIMARY KEY (id),
+                CONSTRAINT processed_input_event_movement_fk
+                  FOREIGN KEY (movement_id) REFERENCES loyalty.movement (id)
+              );
+            splitStatements: false
+            stripComments: true
+
+  - changeSet:
+      id: loyalty-008-create-table-outbox
+      author: lglabs
+      changes:
+        - sql:
+            sql: |
+              CREATE TABLE loyalty.outbox (
+                id              uuid                     NOT NULL,
+                saga_id         uuid                     NOT NULL,
+                type            varchar(64)              NOT NULL,
+                payload         jsonb                    NOT NULL,
+                outbox_status   outbox_status            NOT NULL DEFAULT 'STARTED',
+                created_at      timestamp with time zone NOT NULL DEFAULT now(),
+                version         integer                  NOT NULL DEFAULT 0,
+                CONSTRAINT outbox_pkey PRIMARY KEY (id)
+              );
+            splitStatements: false
+            stripComments: true
+
+  - changeSet:
+      id: loyalty-009-create-index-movement-customer-appended
+      author: lglabs
+      changes:
+        - sql:
+            sql: |
+              CREATE INDEX idx_movement_customer_appended
+                ON loyalty.movement (customer_id, appended_at DESC, id DESC);
+            splitStatements: false
+            stripComments: true
+
+  - changeSet:
+      id: loyalty-010-create-index-movement-originating-order
+      author: lglabs
+      changes:
+        - sql:
+            sql: |
+              CREATE INDEX idx_movement_originating_order
+                ON loyalty.movement (originating_order_id);
+            splitStatements: false
+            stripComments: true
+
+  - changeSet:
+      id: loyalty-011-create-unique-index-processed-event-type-id
+      author: lglabs
+      changes:
+        - sql:
+            sql: |
+              CREATE UNIQUE INDEX uq_processed_event_type_id
+                ON loyalty.processed_input_event (originating_event_type, originating_event_id);
+            splitStatements: false
+            stripComments: true
+
+  - changeSet:
+      id: loyalty-012-create-index-outbox-status-created
+      author: lglabs
+      changes:
+        - sql:
+            sql: |
+              CREATE INDEX idx_outbox_status_created
+                ON loyalty.outbox (outbox_status, created_at);
+            splitStatements: false
+            stripComments: true

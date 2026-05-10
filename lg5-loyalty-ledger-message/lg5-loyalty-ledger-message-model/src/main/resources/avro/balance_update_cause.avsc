@@ -1,0 +1,7 @@
+{
+    "type": "enum",
+    "name": "BalanceUpdateCause",
+    "namespace": "com.lg.platform.loyalty.kafka.avro.model",
+    "symbols": ["ORDER_PAID", "ORDER_CANCELLED", "ORDER_REFUNDED", "UNKNOWN"],
+    "default": "UNKNOWN"
+}

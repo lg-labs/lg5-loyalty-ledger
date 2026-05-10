@@ -1,0 +1,35 @@
+{
+    "namespace": "com.lg.platform.order.kafka.avro.model",
+    "type": "record",
+    "name": "OrderCancelledAvroModel",
+    "fields": [
+        {
+            "name": "messageId",
+            "type": {
+                "type": "string",
+                "logicalType": "uuid"
+            }
+        },
+        {
+            "name": "customerId",
+            "type": {
+                "type": "string",
+                "logicalType": "uuid"
+            }
+        },
+        {
+            "name": "orderId",
+            "type": {
+                "type": "string",
+                "logicalType": "uuid"
+            }
+        },
+        {
+            "name": "createdAt",
+            "type": {
+                "type": "long",
+                "logicalType": "timestamp-millis"
+            }
+        }
+    ]
+}

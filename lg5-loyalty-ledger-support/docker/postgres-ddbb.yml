@@ -1,0 +1,49 @@
+services:
+  postgres:
+    image: postgres:${POSTGRES_VERSION}
+    container_name: loyalty-ledger-postgres
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASS}
+      - POSTGRES_DB=${POSTGRES_DB}
+    expose:
+      - ${POSTGRES_PORT}
+    ports:
+      - '${POSTGRES_PORT}:5432'
+    volumes:
+      - loyalty-ledger-db:/var/lib/postgresql/data
+      - "../initdb:/docker-entrypoint-initdb.d"
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          memory: ${POSTGRES_MEM_LIMIT}
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U $POSTGRES_USER" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  pgadmin:
+    image: dpage/pgadmin4:${PGADMIN_VERSION}
+    container_name: loyalty-ledger-db-ui
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_USER}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASS}
+      PGADMIN_LISTEN_PORT: 80
+      PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION: 'False'
+    ports:
+      - ${PGADMIN_PORT}:80
+    volumes:
+      - loyalty-ledger-pgadmin:/var/lib/pgadmin
+    links:
+      - postgres:pgsql-server
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  loyalty-ledger-db:
+    driver: local
+  loyalty-ledger-pgadmin:
+    driver: local

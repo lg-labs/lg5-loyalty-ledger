@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.lg5.spring</groupId>
+        <artifactId>lg5-spring-parent</artifactId>
+        <version>1.0.0-alpha.d0d754a</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>com.lg.platform.loyalty</groupId>
+    <artifactId>lg5-loyalty-ledger</artifactId>
+    <version>1.0.0-alpha</version>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>lg5-loyalty-ledger-api</module>
+        <module>lg5-loyalty-ledger-container</module>
+        <module>lg5-loyalty-ledger-data-access</module>
+        <module>lg5-loyalty-ledger-domain</module>
+        <module>lg5-loyalty-ledger-message</module>
+        <module>lg5-loyalty-ledger-acceptance-test</module>
+        <module>lg5-loyalty-ledger-support</module>
+    </modules>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>com.lg.platform.loyalty</groupId>
+                <artifactId>lg5-loyalty-ledger-domain-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.lg.platform.loyalty</groupId>
+                <artifactId>lg5-loyalty-ledger-application-service</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.lg.platform.loyalty</groupId>
+                <artifactId>lg5-loyalty-ledger-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.lg.platform.loyalty</groupId>
+                <artifactId>lg5-loyalty-ledger-data-access</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.lg.platform.loyalty</groupId>
+                <artifactId>lg5-loyalty-ledger-message-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.lg.platform.loyalty</groupId>
+                <artifactId>lg5-loyalty-ledger-message-model</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.lg.platform.loyalty</groupId>
+                <artifactId>lg5-loyalty-ledger-container</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+</project>
