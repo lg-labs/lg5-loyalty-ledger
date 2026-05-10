@@ -38,7 +38,8 @@ import org.junit.platform.suite.api.Suite;
                 key = Constants.PLUGIN_PROPERTY_NAME,
                 value = "pretty, "
                         + "json:target/atdd-reports/cucumber.json, "
-                        + "html:target/atdd-reports/cucumber-reports.html"),
+                        + "html:target/atdd-reports/cucumber-reports.html, "
+                        + "io.qameta.allure.cucumber7jvm.AllureCucumber7Jvm"),
         @ConfigurationParameter(
                 key = Constants.GLUE_PROPERTY_NAME,
                 value = "com.lg.platform.loyalty.acceptance")

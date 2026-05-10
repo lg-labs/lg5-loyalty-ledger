@@ -1,0 +1,592 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+permissions:
+  contents: write
+
+env:
+  MAVEN_DIR: ./
+
+jobs:
+  setup:
+    name: Setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          java-version: 21
+          distribution: 'zulu'
+      - name: Install xmllint
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libxml2-utils
+
+      - name: Check if pom.xml exists
+        run: |
+          if [ ! -f "${{ env.MAVEN_DIR }}/pom.xml" ]; then
+            echo "Error: pom.xml not found in the specified directory: ${{ env.MAVEN_DIR }}"
+            exit 1
+          fi
+
+      - name: Extract Maven coordinates from pom.xml
+        id: extract_maven_coordinates
+        run: |
+          if ! command -v xmllint &> /dev/null; then
+            echo "xmllint could not be found, exiting..."
+            exit 1
+          fi
+          
+          GROUP_ID=$(xmllint --xpath 'string(//*[local-name()="project"]/*[local-name()="groupId"])' pom.xml)
+          ARTIFACT_ID=$(xmllint --xpath 'string(//*[local-name()="project"]/*[local-name()="artifactId"])' pom.xml)
+          VERSION=$(xmllint --xpath 'string(//*[local-name()="project"]/*[local-name()="version"])' pom.xml)
+          IMAGE_NAME="${GROUP_ID}/${ARTIFACT_ID}:${VERSION}"
+          
+          if [[ -z "$GROUP_ID" || -z "$ARTIFACT_ID" || -z "$VERSION" ]]; then
+            echo "Error: One or more Maven coordinates (GROUP_ID, ARTIFACT_ID, VERSION) could not be extracted."
+            exit 1
+          fi
+
+          {
+            echo "GROUP_ID=$GROUP_ID"
+            echo "ARTIFACT_ID=$ARTIFACT_ID"
+            echo "VERSION=$VERSION"
+            echo "IMAGE_NAME=$IMAGE_NAME"
+          } > maven_details.env
+          
+          echo "Extracted GROUP_ID: $GROUP_ID"
+          echo "Extracted ARTIFACT_ID: $ARTIFACT_ID"
+          echo "Extracted VERSION: $VERSION"
+          echo "Extracted IMAGE_NAME: $IMAGE_NAME"
+
+      - name: Upload Maven details artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: maven-details
+          path: maven_details.env
+
+      - name: Setup Maven credentials
+        uses: ./.github/actions/setup-maven-credentials
+        with:
+          github-token: ${{ secrets.PKG_GITHUB_TOKEN }}
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+
+  checkstyle:
+    name: Checkstyle
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - uses: actions/checkout@v5
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          java-version: 21
+          distribution: 'zulu'
+      - name: Restore Maven Cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+      - name: Setup Maven credentials
+        uses: ./.github/actions/setup-maven-credentials
+        with:
+          github-token: ${{ secrets.PKG_GITHUB_TOKEN }}
+      - name: Run Checkstyle
+        run: make run-checkstyle
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - uses: actions/checkout@v5
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          java-version: 21
+          distribution: 'zulu'
+      - name: Restore Maven Cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+      - name: Setup Maven credentials
+        uses: ./.github/actions/setup-maven-credentials
+        with:
+          github-token: ${{ secrets.PKG_GITHUB_TOKEN }}
+      - name: Install Graphviz
+        run: sudo apt-get update && sudo apt-get install -y graphviz
+      - name: Run verify using Makefile
+        run: make run-verify
+      - name: List files in target directory
+        run: ls -al ./lg5-loyalty-ledger-support/target/site
+      - name: Upload Test reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: ./lg5-loyalty-ledger-support/target/site/jacoco-aggregate-all
+  quality:
+    name: Quality
+    runs-on: ubuntu-latest
+    needs: [ checkstyle, coverage ]
+    steps:
+      - uses: actions/checkout@v5
+      - name: Download Test reports
+        uses: actions/download-artifact@v5
+        with:
+          name: test-reports
+          path: ./site
+      - name: Confirmation
+        run: ls -R
+      - name: Download Codacy Coverage Reporter
+        run: |
+          COV_REPORTER_VERSION=$(curl -s https://api.github.com/repos/codacy/codacy-coverage-reporter/releases/latest | grep tag_name | cut -d '"' -f 4)
+          wget -O codacy-coverage-reporter "https://github.com/codacy/codacy-coverage-reporter/releases/download/${COV_REPORTER_VERSION}/codacy-coverage-reporter-linux"
+          chmod +x codacy-coverage-reporter
+      - name: Confirmation
+        run: echo "Sent report to Sonar or Codacy... "
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: [ checkstyle, coverage ]
+    steps:
+      - uses: actions/checkout@v5
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          java-version: 21
+          distribution: 'zulu'
+      - name: Install Graphviz
+        run: sudo apt-get update && sudo apt-get install -y graphviz
+      - name: Restore Maven Cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+      - name: Setup Maven credentials
+        uses: ./.github/actions/setup-maven-credentials
+        with:
+          github-token: ${{ secrets.PKG_GITHUB_TOKEN }}
+      - name: Download Maven details artifact
+        uses: actions/download-artifact@v5
+        with:
+          name: maven-details
+          path: .
+
+      - name: Load Maven details
+        run: |
+          set -a
+          source maven_details.env
+          set +a
+          echo "Loaded GROUP_ID: $GROUP_ID, ARTIFACT_ID: $ARTIFACT_ID, VERSION: $VERSION, IMAGE_NAME: $IMAGE_NAME"
+          echo "IMAGE_NAME=$IMAGE_NAME" >> "$GITHUB_ENV"  # <-- Export IMAGE_NAME to the GitHub environment
+          echo "GROUP_ID=$GROUP_ID" >> "$GITHUB_ENV"  # <-- Export GROUP_ID to the GitHub environment
+
+
+      - name: Build using Makefile
+        run: make install-skip-test
+
+      - name: Show docker image
+        run: |
+          echo "${{ env.GROUP_ID }}"
+          docker image list | grep ${{ env.GROUP_ID }}
+
+      - name: Save Docker image
+        run: |
+          docker save -o lg5-loyalty-ledger-service-image.tar ${{ env.IMAGE_NAME }}
+
+      - name: Upload Docker image as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-image
+          path: lg5-loyalty-ledger-service-image.tar
+      - name: Upload dependency-graph.png as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-graph
+          path: ./target/dependency-graph.png
+      # ADR-002 (003-ci-cd-canonical): firebase.json is not yet generated
+      # in this repo (Firebase Hosting is deferred to feature 004).
+      # Step kept verbatim per spec, but soft-failed so the build job
+      # stays green until feature 004 lands a real firebase.json.
+      - name: Upload firebase.json as artifact
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: firebase-json
+          path: ./firebase.json
+          if-no-files-found: warn
+
+  test:
+    name: Acceptance Test
+    runs-on: ubuntu-latest
+    needs: build
+    env:
+      APPLICATION_TRACES_FILE_ENABLED: "false"
+      APPLICATION_LOG_ENABLED: "false"
+      APPLICATION_LOG_SOURCE_PATH: "/logs"
+      APPLICATION_LOG_DESTINATION_PATH: "./target/logs"
+    steps:
+      - uses: actions/checkout@v5
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          java-version: 21
+          distribution: 'zulu'
+
+      - name: Install Graphviz
+        run: sudo apt-get update && sudo apt-get install -y graphviz
+
+      - name: Download Docker image artifact
+        uses: actions/download-artifact@v5
+        with:
+          name: docker-image
+          path: .
+
+      - name: Load Docker image
+        run: docker load -i lg5-loyalty-ledger-service-image.tar
+
+      - name: Show docker image
+        run: docker image list | grep com.
+
+      - name: Restore Maven Cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+
+      - name: Setup Maven credentials
+        uses: ./.github/actions/setup-maven-credentials
+        with:
+          github-token: ${{ secrets.PKG_GITHUB_TOKEN }}
+
+      - name: Run acceptance tests using Makefile
+        run: make run-atdd-module
+
+      - name: List files in target directory
+        run: ls -R ./lg5-loyalty-ledger-acceptance-test/target/
+      - name: List files in parent target directory
+        run: ls -R ./
+
+      - name: Upload Cucumber Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: cucumber-report
+          path: ./lg5-loyalty-ledger-acceptance-test/target/atdd-reports/cucumber-reports.html
+
+      - name: Upload Allure raw results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results
+          path: ./lg5-loyalty-ledger-acceptance-test/target/allure-results
+          if-no-files-found: ignore
+
+  openapi:
+    name: OpenAPI
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Assemble OpenAPI site (Swagger UI via CDN)
+        run: |
+          set -euo pipefail
+          mkdir -p ./lg5-loyalty-ledger-support/openapi
+          cp ./lg5-loyalty-ledger-support/openapi-template/index.html ./lg5-loyalty-ledger-support/openapi/index.html
+          cp ./lg5-loyalty-ledger-api/src/main/resources/spec/openapi.yaml \
+             ./lg5-loyalty-ledger-support/openapi/openapi.yaml
+
+      - name: List files in target directory
+        run: ls -al ./lg5-loyalty-ledger-support/openapi
+
+      - name: Upload OpenAPI artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: openapi-doc
+          path: ./lg5-loyalty-ledger-support/openapi
+  asyncapi:
+    name: AsyncAPI
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Assemble AsyncAPI site (Studio-like, web-component via CDN)
+        run: |
+          set -euo pipefail
+          mkdir -p ./lg5-loyalty-ledger-support/asyncapi
+          cp ./lg5-loyalty-ledger-support/asyncapi-template/index.html ./lg5-loyalty-ledger-support/asyncapi/index.html
+          cp ./lg5-loyalty-ledger-message/lg5-loyalty-ledger-message-model/src/main/resources/spec/asyncapi.yaml \
+             ./lg5-loyalty-ledger-support/asyncapi/asyncapi.yaml
+
+      - name: Display structure of generated files
+        run: ls -al ./lg5-loyalty-ledger-support/asyncapi
+
+      - name: Upload AsyncAPI artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: asyncapi-doc
+          path: ./lg5-loyalty-ledger-support/asyncapi
+
+  allure:
+    name: Allure Report
+    runs-on: ubuntu-latest
+    needs: test
+    if: always()
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Download Allure raw results
+        uses: actions/download-artifact@v5
+        with:
+          name: allure-results
+          path: ./allure-results
+        continue-on-error: true
+
+      - name: Set up Allure CLI
+        run: |
+          set -euo pipefail
+          ALLURE_VERSION=2.32.0
+          curl -sL "https://github.com/allure-framework/allure2/releases/download/${ALLURE_VERSION}/allure-${ALLURE_VERSION}.tgz" \
+            | tar -xz -C "$HOME"
+          echo "$HOME/allure-${ALLURE_VERSION}/bin" >> "$GITHUB_PATH"
+
+      - name: Generate Allure HTML report
+        run: |
+          set -euo pipefail
+          allure --version
+          allure generate ./allure-results --clean -o ./allure-report
+
+      - name: Display generated files
+        run: ls -al ./allure-report
+
+      - name: Upload Allure HTML report
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-report
+          path: ./allure-report
+  docs:
+    name: Docs
+    runs-on: ubuntu-latest
+    needs: [ test, visualization ]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: 3.x
+      - uses: actions/cache@v4
+        with:
+          key: ${{ github.ref }}
+          path: .cache
+      - run: pip install mkdocs-material
+      - run: pip install pillow cairosvg
+      - name: Download dependency-graph
+        uses: actions/download-artifact@v5
+        with:
+          name: dependency-graph
+          path: ./lg5-loyalty-ledger-support/app/docs/img
+      - name: Download Gource
+        uses: actions/download-artifact@v5
+        with:
+          name: gource
+          path: ./lg5-loyalty-ledger-support/app/docs/video
+
+      - run: cd ./lg5-loyalty-ledger-support/app && mkdocs build
+
+      - name: Display structure of downloaded files
+        run: ls -R ./lg5-loyalty-ledger-support/app
+
+      - name: Upload MkDocs artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mkdocs
+          path: ./lg5-loyalty-ledger-support/app/site
+  visualization:
+    name: Visualization
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Gource-Action
+        uses: NBprojekt/gource-action@d2fdf85904db416b69445dae5551282528e052ae # v1.2.1
+        with:
+          gource_title: ${{ github.repository }}
+          gource_resolution: '2160p'
+          gource_fps: 30
+          gource_font_size: 10
+          gource_background_color: 555555
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gource
+          path: ./gource/gource.mp4
+
+  # ADR-001 (003-ci-cd-canonical) — preserved from feat 002 / TASK-004.
+  # Spectral lint of OpenAPI + AsyncAPI specs. Node-only, no Maven, no JDK.
+  # Source: pre-canonical .github/workflows/ci.yml lines 21-40 (deleted in this PR).
+  api-specs-lint:
+    name: API specs lint (Spectral)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js (for Spectral CLI)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Spectral CLI (pinned)
+        run: npm install -g @stoplight/spectral-cli@6.15.1
+
+      - name: Lint OpenAPI + AsyncAPI specs
+        # Fails the job on any warning or error. Info-level findings
+        # (e.g. asyncapi-latest-version) do NOT fail — we keep
+        # AsyncAPI 2.6 deliberately for tooling compatibility.
+        run: spectral lint docs/api/openapi.yaml docs/api/asyncapi.yaml --ruleset .spectral.yaml --fail-severity=warn
+
+  # ADR-001 (003-ci-cd-canonical) — preserved from feat 001 / TASK-014.
+  # Schema-Registry compatibility gate: idempotency + positive + negative case.
+  # `needs:` relaxed from `build` to `setup` per ADR-001 (Make+Kafka self-contained, no Maven build needed).
+  # Source: pre-canonical .github/workflows/ci.yml lines 181-302 (deleted in this PR).
+  schema-compat:
+    name: Schema-Registry compatibility gate (TASK-014)
+    runs-on: ubuntu-latest
+    needs: setup
+    services:
+      # Lightweight Kafka + Schema Registry stack just for the gate.
+      # Versions match lg5-loyalty-ledger-support/docker/.env (KAFKA_VERSION=7.5.0).
+      zookeeper:
+        image: confluentinc/cp-zookeeper:7.5.0
+        env:
+          ZOOKEEPER_CLIENT_PORT: 2181
+          ZOOKEEPER_TICK_TIME: 2000
+        ports:
+          - 2181:2181
+      kafka:
+        image: confluentinc/cp-kafka:7.5.0
+        env:
+          KAFKA_BROKER_ID: 1
+          KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+          KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+          KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+          KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+          KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+          KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+        ports:
+          - 9092:9092
+      schema-registry:
+        image: confluentinc/cp-schema-registry:7.5.0
+        env:
+          SCHEMA_REGISTRY_HOST_NAME: schema-registry
+          SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: PLAINTEXT://kafka:9092
+          SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+        ports:
+          - 8081:8081
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Wait for Schema Registry to be ready
+        run: |
+          for i in $(seq 1 60); do
+            if curl -fsS http://localhost:8081/subjects >/dev/null 2>&1; then
+              echo "Schema Registry is up (after ${i}s)"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Schema Registry did not become ready in 60s" >&2
+          exit 1
+
+      - name: Register schemas (publish-schemas; idempotent)
+        env:
+          SCHEMA_REGISTRY_URL: http://localhost:8081
+        run: make publish-schemas
+
+      - name: Re-run publish-schemas (must be a no-op — idempotency check)
+        env:
+          SCHEMA_REGISTRY_URL: http://localhost:8081
+        run: |
+          before=$(curl -fsS http://localhost:8081/subjects/customer-balance-updated-value/versions | python3 -c 'import json,sys; print(len(json.load(sys.stdin)))')
+          make publish-schemas
+          after=$(curl -fsS http://localhost:8081/subjects/customer-balance-updated-value/versions | python3 -c 'import json,sys; print(len(json.load(sys.stdin)))')
+          if [ "$before" != "$after" ]; then
+            echo "FAIL: re-running publish-schemas created new version(s) (before=$before, after=$after)" >&2
+            exit 1
+          fi
+          echo "OK: publish-schemas is idempotent (versions=$after)"
+
+      - name: Compatibility check on current sources (must PASS)
+        env:
+          SCHEMA_REGISTRY_URL: http://localhost:8081
+        run: make check-schema-compat
+
+      - name: Compatibility check rejects breaking change (must FAIL without registering)
+        env:
+          SCHEMA_REGISTRY_URL: http://localhost:8081
+        run: |
+          # Snapshot registered version count for the record subject.
+          before=$(curl -fsS http://localhost:8081/subjects/customer-balance-updated-value/versions | python3 -c 'import json,sys; print(len(json.load(sys.stdin)))')
+
+          # Mutate a copy of the record schema with a BACKWARD-incompatible
+          # change: add a required (non-defaulted) field. Under Avro
+          # BACKWARD semantics a new reader of old data has no value to
+          # supply for the new field, so this is correctly rejected.
+          # (Removing a field is BACKWARD-compatible — the new reader
+          # ignores it — so it is NOT a valid negative test here.)
+          schema=lg5-loyalty-ledger-message/lg5-loyalty-ledger-message-model/src/main/resources/avro/customer_balance_updated.avsc
+          cp "$schema" "$schema.bak"
+          python3 -c '
+          import json, sys
+          path = sys.argv[1]
+          with open(path) as f:
+              s = json.load(f)
+          s["fields"].append({"name": "newRequiredField", "type": "string"})
+          with open(path, "w") as f:
+              json.dump(s, f, indent=2)
+          ' "$schema"
+
+          set +e
+          make check-schema-compat
+          rc=$?
+          set -e
+
+          # Restore the original file regardless of outcome.
+          mv "$schema.bak" "$schema"
+
+          if [ "$rc" = "0" ]; then
+            echo "FAIL: check-schema-compat returned 0 for a known-incompatible change" >&2
+            exit 1
+          fi
+          echo "OK: check-schema-compat correctly rejected the breaking change (rc=$rc)"
+
+          # Confirm the gate did NOT register the bad schema.
+          after=$(curl -fsS http://localhost:8081/subjects/customer-balance-updated-value/versions | python3 -c 'import json,sys; print(len(json.load(sys.stdin)))')
+          if [ "$before" != "$after" ]; then
+            echo "FAIL: check-schema-compat had a side effect (versions before=$before after=$after)" >&2
+            exit 1
+          fi
+          echo "OK: check-schema-compat is read-only (versions=$after)"
