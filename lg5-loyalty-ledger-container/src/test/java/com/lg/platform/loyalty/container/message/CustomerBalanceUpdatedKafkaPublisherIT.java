@@ -3,6 +3,7 @@ package com.lg.platform.loyalty.container.message;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lg.platform.loyalty.application.outbox.model.OutboxMessage;
 import com.lg.platform.loyalty.application.outbox.payload.CustomerBalanceUpdatedEventPayload;
+import com.lg.platform.loyalty.application.ports.input.LoyaltyLedgerInputPort;
 import com.lg.platform.loyalty.application.ports.output.repository.OutboxRepository;
 import com.lg.platform.loyalty.container.boot.Bootstrap;
 import com.lg.platform.loyalty.kafka.avro.model.BalanceUpdateCause;
@@ -23,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.time.Duration;
 import java.time.ZonedDateTime;
@@ -89,6 +91,20 @@ class CustomerBalanceUpdatedKafkaPublisherIT extends Bootstrap {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    /**
+     * Unused in this IT; declared solely to keep the Spring
+     * TestContext cache key byte-for-byte identical to the listener
+     * ITs in this package. {@code @MockitoBean} contributes to the
+     * cache key — without this declaration the publisher IT would
+     * trigger a fresh ApplicationContext (and a fresh set of
+     * testcontainers, with a colliding {@code kafka} network alias
+     * + an SR group with multiple members advertising the same URL).
+     * See OrderPaidKafkaListenerIT comment for the full history.
+     */
+    @MockitoBean
+    @SuppressWarnings("unused")
+    private LoyaltyLedgerInputPort loyaltyLedgerInputPort;
 
     @BeforeEach
     void cleanOutbox() {
