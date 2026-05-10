@@ -1,6 +1,7 @@
 package com.lg.platform.loyalty.dataaccess.outbox.entity;
 
 import com.lg5.spring.outbox.OutboxStatus;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -44,6 +45,17 @@ public class OutboxJpaEntity {
 
     private String type;
 
+    /**
+     * JSON document; declared as {@code jsonb} at the DB layer
+     * (data-model.md §outbox). The JDBC URL parameter
+     * {@code stringtype=unspecified} lets the Postgres driver coerce
+     * the {@link String} value into {@code jsonb}; the
+     * {@code columnDefinition} below tells Hibernate's
+     * {@code ddl-auto=validate} phase that the live column is
+     * {@code jsonb} (not the default {@code varchar(255)} mapping for
+     * {@link String}).
+     */
+    @Column(columnDefinition = "jsonb")
     private String payload;
 
     @Enumerated(EnumType.STRING)
