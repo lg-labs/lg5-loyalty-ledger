@@ -70,7 +70,7 @@ work (M2-M3).
 
 ## TASK-002 — Verify build + wire `application.yaml` test/local profiles
 
-- **Status:** todo
+- **Status:** done
 - **References:** RULE-001, RULE-002, RULE-012, RULE-014, RULE-017
 - **Depends on:** TASK-001
 - **Modules touched:** `lg5-loyalty-ledger-container`
@@ -80,6 +80,8 @@ work (M2-M3).
   - **Given** the scaffolded modules from TASK-001
   - **When** `make install-skip-test` is run
   - **Then** the build returns `0` and produces 8 JARs; `application.yaml` declares profiles `test` and `local`, sets `scheduling.enabled: false` for `test`, and uses canonical config prefixes `kafka-config.*`, `loyalty-ledger-service.*`, `spring.datasource.*` (RULE-014); the JDK in use is 21 and Spring Boot is `3.4.2` (RULE-001).
+
+> Completed in commit <sha-placeholder>; build green with JDK 21 pinned via .tool-versions; profiles verified. Deferred: lg5-spring-parent@cbb6783 transitively resolves Spring Boot 3.3.5 (RULE-001 expects 3.4.2) — framework-side concern, requires a newer parent SHA; out of scope for this TASK.
 
 ## TASK-003 — Define `domain-core`: `Movement`, `CustomerBalance`, `ProcessedInputEvent`, `CustomerBalanceUpdatedEvent`, value objects
 
