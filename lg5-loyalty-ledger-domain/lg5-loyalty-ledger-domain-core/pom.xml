@@ -16,5 +16,18 @@
             <groupId>lg5.common</groupId>
             <artifactId>lg5-common-domain</artifactId>
         </dependency>
+        <!-- Test (RULE-003: stays test-scoped; no Spring on main classpath) -->
+        <dependency>
+            <groupId>com.lg5.jvm</groupId>
+            <artifactId>lg5-jvm-unit-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- AssertJ for fluent assertions (pure JVM, no Spring; RULE-003 OK). -->
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <version>3.26.3</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 </project>

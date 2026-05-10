@@ -85,7 +85,7 @@ work (M2-M3).
 
 ## TASK-003 — Define `domain-core`: `Movement`, `CustomerBalance`, `ProcessedInputEvent`, `CustomerBalanceUpdatedEvent`, value objects
 
-- **Status:** todo
+- **Status:** done
 - **References:** REQ-002, REQ-007, REQ-008, REQ-013, REQ-014, RULE-003, RULE-005, RULE-008, RULE-016
 - **Depends on:** TASK-001
 - **Modules touched:** `lg5-loyalty-ledger-domain-core`
@@ -95,6 +95,8 @@ work (M2-M3).
   - **Given** unit tests covering `Movement.ofCredit`/`ofDebit` invariants (sign matches cause; `delta != 0`), `CustomerBalance.applyDelta` allowing negative results, `CustomerBalance.empty(id)` factory, and `ProcessedInputEvent` factories per outcome
   - **When** `mvn test -pl lg5-loyalty-ledger-domain-core` runs
   - **Then** all unit tests pass; `domain-core/pom.xml` declares **no** Spring dependency (RULE-003 verified by `mvn dependency:tree`); aggregates extend `AggregateRoot` from `lg5-common-domain` (RULE-016); every aggregate exposes a `version: int` field (RULE-008); `Movement` has no public mutator method (REQ-013).
+
+> Completed in commit <sha-placeholder>; 19 test methods green; RULE-003/005/008/016 audited.
 
 ## TASK-004 — Flyway DDL: `loyalty` schema + 4 tables + Postgres ENUMs + indexes
 
