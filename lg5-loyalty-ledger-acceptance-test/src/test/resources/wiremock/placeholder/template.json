@@ -1,0 +1,63 @@
+{
+  "mappings": [
+    {
+      "request": {
+        "method": "GET",
+        "urlPathPattern": "/subjects/.*/versions"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/vnd.schemaregistry.v1+json"
+        },
+        "jsonBody": [1]
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "urlPathPattern": "/subjects/.*/versions/latest"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/vnd.schemaregistry.v1+json"
+        },
+        "jsonBody": {
+          "subject": "placeholder",
+          "version": 1,
+          "id": 1,
+          "schema": "{\"type\":\"record\",\"name\":\"Placeholder\",\"fields\":[]}"
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "urlPathPattern": "/subjects/.*/versions"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/vnd.schemaregistry.v1+json"
+        },
+        "jsonBody": {
+          "id": 1
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "urlPathPattern": "/.*"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "jsonBody": {}
+      }
+    }
+  ]
+}

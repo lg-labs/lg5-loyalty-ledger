@@ -38,10 +38,50 @@
             <artifactId>lg5-spring-kafka-consumer</artifactId>
         </dependency>
 
-        <!-- Test-->
+        <!-- App modules: pulled in so the @SpringBootApplication scans
+             every layer (domain, application-service, data-access,
+             api, message). This module hosts the ATDD runner; the
+             real Lg5LoyaltyLedgerApplication class lives in
+             lg5-loyalty-ledger-container. -->
+        <dependency>
+            <groupId>com.lg.platform.loyalty</groupId>
+            <artifactId>lg5-loyalty-ledger-container</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.lg.platform.loyalty</groupId>
+            <artifactId>lg5-loyalty-ledger-application-service</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.lg.platform.loyalty</groupId>
+            <artifactId>lg5-loyalty-ledger-data-access</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.lg.platform.loyalty</groupId>
+            <artifactId>lg5-loyalty-ledger-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.lg.platform.loyalty</groupId>
+            <artifactId>lg5-loyalty-ledger-message-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.lg.platform.loyalty</groupId>
+            <artifactId>lg5-loyalty-ledger-message-model</artifactId>
+        </dependency>
+
+        <!-- Test: Cucumber + Lg5TestBootPortNone + Testcontainers come transitively. -->
         <dependency>
             <groupId>com.lg5.spring</groupId>
             <artifactId>lg5-spring-acceptance-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.lg5.spring</groupId>
+            <artifactId>lg5-spring-integration-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.awaitility</groupId>
+            <artifactId>awaitility</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

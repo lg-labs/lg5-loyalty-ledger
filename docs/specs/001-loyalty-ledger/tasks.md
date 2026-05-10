@@ -322,7 +322,7 @@ work (M2-M3).
 
 ## TASK-018 — ATDD infra: Cucumber + Testcontainers (Postgres, Kafka, Schema Registry) + Wiremock setup
 
-- **Status:** todo
+- **Status:** done
 - **References:** RULE-012, RULE-013
 - **Depends on:** TASK-002, TASK-013
 - **Modules touched:** `lg5-loyalty-ledger-acceptance-test`
