@@ -191,16 +191,18 @@ work (M2-M3).
 
 ## TASK-010 — Kafka listener + config for `order-cancelled`
 
-- **Status:** todo
+- **Status:** done
 - **References:** REQ-004, REQ-005, REQ-015, RULE-007, RULE-010, RULE-014
 - **Depends on:** TASK-008
-- **Modules touched:** `lg5-loyalty-ledger-message-core`
+- **Modules touched:** `lg5-loyalty-ledger-message-core`, `lg5-loyalty-ledger-container` (IT)
 - **Skill:** `lg5-kafka-avro`
 - **Command / Subagent:** `/add-kafka-listener lg5-loyalty-ledger order-cancelled OrderCancelledAvroModel`
 - **Acceptance:**
   - **Given** a Kafka Testcontainers broker with the `order-cancelled` topic
   - **When** an `OrderCancelledAvroModel` is produced
   - **Then** the listener invokes the application-service exactly once with the cancellation command; same NO-OP swallow contract as TASK-009.
+
+> Completed by adding `OrderCancelledKafkaListener` (mirrors `OrderPaidKafkaListener` structurally — `KafkaConsumer<OrderCancelledAvroModel>`, batch listener, NO-OP swallow on `OptimisticLockingFailureException` + `DataIntegrityViolationException`) and `OrderCancelledKafkaListenerIT` (mirrors `OrderPaidKafkaListenerIT` — Postgres + Kafka testcontainers, `@MockitoBean LoyaltyLedgerInputPort`, single-message-then-verify-once, asserts `OrderCancelledCommand` with eventId, customerId, orderId, eventType=`"OrderCancelled"`). Topic / consumer-group already wired in `application.yaml` from M1 scaffold (`loyalty-ledger-service.topics.inbound.order-cancelled` + `loyalty-ledger-service.consumer-groups.order-cancelled`). Mapper `InboundOrderEventAvroMapper.toCommand(OrderCancelledAvroModel)` already shipped in TASK-008.
 
 ## TASK-010b — Kafka listener + config for `order-refunded`
 
