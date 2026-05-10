@@ -348,7 +348,7 @@ work (M2-M3).
 
 ## TASK-020 — Final code review by `lg5-code-reviewer` + DoD closeout
 
-- **Status:** todo
+- **Status:** done
 - **References:** all RULE-001..RULE-018; all REQ-001..REQ-015; all ADRs
 - **Depends on:** TASK-019
 - **Modules touched:** (review only — no code changes; if violations are found, additional follow-up tasks are appended)
