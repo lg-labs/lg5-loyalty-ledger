@@ -17,6 +17,7 @@ info:
     url: https://github.com/lg-labs/lg5-loyalty-ledger
   license:
     name: Proprietary
+    identifier: LicenseRef-Proprietary
 servers:
   - url: http://localhost:8181
     description: Local dev server (default `server.port` from container `application.yaml`).
