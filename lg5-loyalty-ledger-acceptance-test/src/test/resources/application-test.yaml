@@ -5,6 +5,21 @@ spring:
     hibernate:
       ddl-auto: none
     show-sql: false
+  # CRITICAL: blank the production datasource URL/username/password so
+  # the testcontainer's @ServiceConnection auto-binding wins. The
+  # production application.yaml (shipped from lg5-loyalty-ledger-container,
+  # which is on the ATDD classpath as a runtime dep) hard-codes
+  # `spring.datasource.url=jdbc:postgresql://localhost:54322/loyalty_ledger`,
+  # and Spring Boot resolves explicit `spring.datasource.*` BEFORE
+  # @ServiceConnection, so without these blanks the Cucumber context
+  # tries to talk to the developer's local Postgres on 54322 (which
+  # is absent on CI runners) and Liquibase aborts context startup
+  # with `Connection refused`. Mirrors the per-IT @TestPropertySource
+  # blanks in CustomerMovementsControllerIT / OrderPaidKafkaListenerIT.
+  datasource:
+    url:
+    username:
+    password:
 
 # RULE-012: scheduler off in test profile (ATDD scenarios trigger
 # the outbox flush manually via the OutboxScheduler bean to avoid
