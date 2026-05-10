@@ -8,6 +8,7 @@ import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
@@ -82,6 +83,24 @@ public class LoyaltyLedgerExceptionAdvice {
                 .body(new ErrorDTO(
                         "CUSTOMER_NOT_FOUND",
                         ex.getMessage(),
+                        null));
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ErrorDTO> handleMethodNotAllowed(final HttpRequestMethodNotSupportedException ex) {
+        // REQ-013: the read-side controller is append-only — only GET is
+        // mapped on /balance and /movements. Spring's DispatcherServlet
+        // raises HttpRequestMethodNotSupportedException for any other
+        // verb on a registered URI; we surface it as 405 with the
+        // vendor JSON content-type and an explicit code so clients
+        // (and ATDD) can assert against it without ambiguity.
+        log.debug("405 METHOD_NOT_ALLOWED — method '{}' not supported, supported={}",
+                ex.getMethod(), ex.getSupportedHttpMethods());
+        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED)
+                .contentType(MediaType.parseMediaType(CONTENT_TYPE))
+                .body(new ErrorDTO(
+                        "METHOD_NOT_ALLOWED",
+                        "HTTP method '" + ex.getMethod() + "' is not supported on this endpoint.",
                         null));
     }
 
