@@ -28,6 +28,9 @@ jobs:
           submodules: recursive
           fetch-depth: 0
 
+      - name: Install Graphviz (required by depgraph-maven-plugin in framework parent)
+        run: sudo apt-get update && sudo apt-get install -y graphviz
+
       - name: Set up JDK ${{ env.JAVA_VERSION }}
         uses: actions/setup-java@v5
         with:
@@ -95,6 +98,9 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 0
+
+      - name: Install Graphviz (required by depgraph-maven-plugin in framework parent)
+        run: sudo apt-get update && sudo apt-get install -y graphviz
 
       - name: Set up JDK ${{ env.JAVA_VERSION }}
         uses: actions/setup-java@v5
