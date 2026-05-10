@@ -151,7 +151,17 @@ class CustomerMovementsControllerIT extends RestBootstrap {
      * inserted entities.
      */
     private List<MovementJpaEntity> seedMovements(final CustomerId customerId, final int n) {
-        final ZonedDateTime base = ZonedDateTime.now().minusSeconds(1);
+        // Truncate the base to MICROS BEFORE seeding so the JDBC
+        // write path has no sub-microsecond nanos to round (Postgres
+        // `timestamptz` is microsecond-resolution; the driver's
+        // rounding-vs-truncation behavior on sub-microsecond nanos
+        // is not guaranteed and was the root cause of the M5 CI
+        // flake on run 25625409559: expected …14.888244Z, but was
+        // …14.888245Z — a 1-microsecond drift caused by the JDBC
+        // driver rounding the seed's nanos UP to the next micro
+        // before insert). Seeding pre-truncated values guarantees
+        // bit-for-bit equality on the round-trip.
+        final ZonedDateTime base = ZonedDateTime.now().minusSeconds(1).truncatedTo(ChronoUnit.MICROS);
         return java.util.stream.IntStream.range(0, n)
                 .mapToObj(i -> MovementJpaEntity.builder()
                         .id(UUID.randomUUID())
