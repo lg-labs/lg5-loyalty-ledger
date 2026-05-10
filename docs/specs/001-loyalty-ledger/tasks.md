@@ -270,7 +270,7 @@ work (M2-M3).
 
 ## TASK-014 — Schema-registry compatibility check + registration script
 
-- **Status:** todo
+- **Status:** done
 - **References:** REQ-011, REQ-012, RULE-007, ADR-005
 - **Depends on:** TASK-012
 - **Modules touched:** `lg5-loyalty-ledger-message-model`, `lg5-loyalty-ledger-support`

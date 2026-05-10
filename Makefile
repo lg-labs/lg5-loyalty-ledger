@@ -90,5 +90,22 @@ run-happy-path: docker-down docker-up run-app
 run-avro-model:
 	mvn -pl ${AVRO_MODEL} clean install
 
+# SCHEMA REGISTRY (TASK-014)
+# Targets a local Confluent Schema Registry (default
+# http://localhost:8081, override via SCHEMA_REGISTRY_URL=...).
+# Both targets read the .avsc files directly from
+# lg5-loyalty-ledger-message-model/src/main/resources/avro/.
+#
+#   publish-schemas      register both subjects + set BACKWARD compat
+#                        (idempotent: safe to re-run)
+#   check-schema-compat  read-only CI gate; non-zero exit if a local
+#                        change is incompatible with the registered
+#                        latest version (no registration performed)
+publish-schemas:
+	@./lg5-loyalty-ledger-support/scripts/publish-schemas.sh
+
+check-schema-compat:
+	@./lg5-loyalty-ledger-support/scripts/check-schema-compat.sh
+
 run-atdd-module:
 	mvn -pl ${ATDD} clean install -Dapplication.traces.file.enabled=${FILE_LOG}
