@@ -13,11 +13,9 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.testcontainers.containers.GenericContainer;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -69,18 +67,8 @@ class OrderPaidKafkaListenerIT extends Bootstrap {
     @MockitoBean
     private LoyaltyLedgerInputPort loyaltyLedgerInputPort;
 
-    @Autowired(required = false)
-    private GenericContainer<?> schemaRegistryContainer;
-
     @Test
     void receive_invokes_input_port_exactly_once_with_mapped_command() throws Exception {
-        // Framework's ConfluentKafkaContainerCustomConfig sets two waitingFor()
-        // strategies on the SR container, the second of which (forListeningPort)
-        // overrides the first (forHttp). Result: the container is "ready" as
-        // soon as the port is bound, but the SR app inside hasn't finished
-        // initialising. Poll /subjects ourselves before producing.
-        awaitSchemaRegistryReady();
-
         final UUID eventId = UUID.randomUUID();
         final UUID customerId = UUID.randomUUID();
         final UUID orderId = UUID.randomUUID();
@@ -110,31 +98,6 @@ class OrderPaidKafkaListenerIT extends Bootstrap {
         assertThat(op.orderId().getValue()).isEqualTo(orderId);
         assertThat(op.paidAmount().getAmount()).isEqualByComparingTo(new BigDecimal("12.95"));
         assertThat(op.eventType()).isEqualTo("OrderPaid");
-    }
-
-    private void awaitSchemaRegistryReady() {
-        log.info("Polling schema-registry at {}/subjects until 200 OK ...", schemaRegistryUrl);
-        final java.net.http.HttpClient http = java.net.http.HttpClient.newHttpClient();
-        final java.net.http.HttpRequest req = java.net.http.HttpRequest.newBuilder()
-                .uri(java.net.URI.create(schemaRegistryUrl + "/subjects"))
-                .timeout(java.time.Duration.ofSeconds(2))
-                .GET()
-                .build();
-        try {
-            await().atMost(180, TimeUnit.SECONDS)
-                    .pollInterval(2, TimeUnit.SECONDS)
-                    .ignoreExceptions()
-                    .until(() -> {
-                        final int code = http.send(req, java.net.http.HttpResponse.BodyHandlers.discarding())
-                                .statusCode();
-                        log.info("schema-registry probe returned {}", code);
-                        return code == 200;
-                    });
-        } catch (final RuntimeException e) {
-            log.error("schema-registry never became ready; container logs follow:\n{}",
-                    schemaRegistryContainer == null ? "<no container bean>" : schemaRegistryContainer.getLogs());
-            throw e;
-        }
     }
 
     private KafkaProducer<String, Object> newAvroProducer() {
