@@ -240,8 +240,12 @@ jobs:
           # Snapshot registered version count for the record subject.
           before=$(curl -fsS http://localhost:8081/subjects/customer-balance-updated-value/versions | python3 -c 'import json,sys; print(len(json.load(sys.stdin)))')
 
-          # Mutate a copy of the record schema by removing the `delta` field
-          # (a BACKWARD-incompatible change for any consumer that expects it).
+          # Mutate a copy of the record schema with a BACKWARD-incompatible
+          # change: add a required (non-defaulted) field. Under Avro
+          # BACKWARD semantics a new reader of old data has no value to
+          # supply for the new field, so this is correctly rejected.
+          # (Removing a field is BACKWARD-compatible — the new reader
+          # ignores it — so it is NOT a valid negative test here.)
           schema=lg5-loyalty-ledger-message/lg5-loyalty-ledger-message-model/src/main/resources/avro/customer_balance_updated.avsc
           cp "$schema" "$schema.bak"
           python3 -c '
@@ -249,7 +253,7 @@ jobs:
           path = sys.argv[1]
           with open(path) as f:
               s = json.load(f)
-          s["fields"] = [fld for fld in s["fields"] if fld["name"] != "delta"]
+          s["fields"].append({"name": "newRequiredField", "type": "string"})
           with open(path, "w") as f:
               json.dump(s, f, indent=2)
           ' "$schema"
