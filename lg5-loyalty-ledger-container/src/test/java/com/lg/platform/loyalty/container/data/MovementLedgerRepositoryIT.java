@@ -13,6 +13,7 @@ import org.springframework.test.context.TestPropertySource;
 
 import java.lang.reflect.Method;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -52,7 +53,9 @@ class MovementLedgerRepositoryIT extends Bootstrap {
         final CustomerId customerId = CustomerId.random();
         final OrderId orderId = OrderId.random();
         final UUID eventId = UUID.randomUUID();
-        final ZonedDateTime receivedAt = ZonedDateTime.now().minusSeconds(5);
+        // Postgres timestamptz has microsecond precision; truncate the input
+        // so the round-trip equality assertion is stable across platforms.
+        final ZonedDateTime receivedAt = ZonedDateTime.now().minusSeconds(5).truncatedTo(ChronoUnit.MICROS);
 
         final Movement saved = movementLedgerRepository.save(
                 Movement.ofCredit(customerId, orderId, eventId,
@@ -68,7 +71,9 @@ class MovementLedgerRepositoryIT extends Bootstrap {
         assertThat(found.getOriginatingEventId()).isEqualTo(eventId);
         assertThat(found.getOriginatingEventType()).isEqualTo("OrderPaidEvent");
         // REQ-014 cross-check: the originating-event audit fields survive a write+read.
-        assertThat(found.getOriginatingEventReceivedAt()).isEqualTo(receivedAt);
+        // Compare instants — Postgres timestamptz normalizes the zone (typically to UTC),
+        // so ZonedDateTime#equals (which is zone-sensitive) would over-constrain.
+        assertThat(found.getOriginatingEventReceivedAt().toInstant()).isEqualTo(receivedAt.toInstant());
         assertThat(found.getAppendedAt()).isNotNull();
     }
 
