@@ -49,9 +49,18 @@ import static org.mockito.Mockito.verify;
         "testcontainers.kafka.enabled=true",
         "spring.datasource.url=",
         "spring.datasource.username=",
-        "spring.datasource.password=",
-        // Unique consumer group id so re-runs don't interfere with prior offsets.
-        "loyalty-ledger-service.consumer-groups.order-paid=order-paid-listener-it"
+        "spring.datasource.password="
+        // NOTE: do NOT add per-IT-unique property overrides here. The
+        // Spring TestContext cache key is derived from the full
+        // @TestPropertySource set, so any IT-local property string would
+        // force a fresh ApplicationContext (and a fresh testcontainer
+        // network) per IT class — which collides with the previous
+        // class's still-tearing-down `kafka` network alias and breaks
+        // the SR container's KafkaStore boot (Connection reset →
+        // /subjects 200 wait timeout). All Kafka listener ITs in this
+        // package therefore declare the *same* property set so they
+        // share one context and one container set across the whole
+        // module's IT phase.
 })
 class OrderPaidKafkaListenerIT extends Bootstrap {
 

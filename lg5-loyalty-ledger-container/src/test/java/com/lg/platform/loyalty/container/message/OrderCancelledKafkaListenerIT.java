@@ -42,8 +42,11 @@ import static org.mockito.Mockito.verify;
         "testcontainers.kafka.enabled=true",
         "spring.datasource.url=",
         "spring.datasource.username=",
-        "spring.datasource.password=",
-        "loyalty-ledger-service.consumer-groups.order-cancelled=order-cancelled-listener-it"
+        "spring.datasource.password="
+        // See OrderPaidKafkaListenerIT for why no per-IT-unique
+        // properties: identical @TestPropertySource set across all
+        // listener ITs ⇒ shared Spring context ⇒ shared Testcontainers
+        // (no `kafka` network-alias collisions).
 })
 class OrderCancelledKafkaListenerIT extends Bootstrap {
 
