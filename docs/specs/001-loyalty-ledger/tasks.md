@@ -97,6 +97,7 @@ work (M2-M3).
   - **Then** all unit tests pass; `domain-core/pom.xml` declares **no** Spring dependency (RULE-003 verified by `mvn dependency:tree`); aggregates extend `AggregateRoot` from `lg5-common-domain` (RULE-016); every aggregate exposes a `version: int` field (RULE-008); `Movement` has no public mutator method (REQ-013).
 
 > Completed in commit <sha-placeholder>; 19 test methods green; RULE-003/005/008/016 audited.
+> Amended via fix(TASK-003) at 741540d to remove domain-side version bump in `CustomerBalance.applyDelta` — JPA `@Version` (added in TASK-006) is the single source of truth for the optimistic-locking token; matches food-ordering-system convention and resolves a dual-ownership conflict surfaced during TASK-006 implementation.
 
 ## TASK-004 — Liquibase DDL: `loyalty` schema + 4 tables + Postgres ENUMs + indexes
 
@@ -130,7 +131,7 @@ work (M2-M3).
 
 ## TASK-006 — JPA entity + repository for `customer_balance` (projection upsert)
 
-- **Status:** in_progress
+- **Status:** done
 - **References:** REQ-007, REQ-008, REQ-009, RULE-008, RULE-016, ADR-004
 - **Depends on:** TASK-003, TASK-004
 - **Modules touched:** `lg5-loyalty-ledger-data-access`
@@ -140,6 +141,8 @@ work (M2-M3).
   - **Given** the `customer_balance` table from TASK-004
   - **When** an IT applies a sequence of deltas to one customer (e.g. `+100, -150, +50`)
   - **Then** the resulting row reflects `balance = 0` after the third write; intermediate negative state (`-50` after the second write) is observed by a concurrent read with no exception (REQ-007); the JPA entity carries `@Version` and an `OptimisticLockingFailureException` on a stale write is propagated (will be swallowed in the listener layer per RULE-010, not here); the repository exposes `findById(customerId)` and `save(...)` only (no delete).
+
+> Completed in commit <sha-placeholder>; `CustomerBalanceJpaEntity` carries `@Version` (Hibernate-managed; see fix-up to TASK-003 for domain-side change), `CustomerBalanceJpaRepository` extends only `org.springframework.data.repository.Repository` (no `delete*` exposed), `CustomerBalanceRepositoryIT` (3 tests) asserts the +100,-150,+50 sequence → balance=0 (REQ-007 negative intermediate observable), an `OptimisticLockingFailureException` on a stale write, and the no-`delete*` surface contract.
 
 ## TASK-007 — JPA entity + repository for `processed_input_event` + `outbox`
 
