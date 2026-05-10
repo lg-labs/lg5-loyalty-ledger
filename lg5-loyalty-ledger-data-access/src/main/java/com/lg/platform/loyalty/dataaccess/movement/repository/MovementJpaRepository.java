@@ -1,6 +1,8 @@
 package com.lg.platform.loyalty.dataaccess.movement.repository;
 
 import com.lg.platform.loyalty.dataaccess.movement.entity.MovementJpaEntity;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.Repository;
 import org.springframework.data.repository.query.Param;
@@ -54,4 +56,31 @@ public interface MovementJpaRepository extends Repository<MovementJpaEntity, UUI
      * {@code update}/{@code delete}/{@code remove} method is added.
      */
     List<MovementJpaEntity> findByOriginatingOrderIdOrderByAppendedAtAsc(UUID originatingOrderId);
+
+    /**
+     * REQ-010 / TASK-016 — reverse-chronological page of movements for
+     * one customer. The {@code Pageable} carries page index + size; the
+     * derived-name suffix {@code OrderByAppendedAtDescIdDesc} pins the
+     * sort to ({@code appended_at DESC, id DESC}) which is exactly the
+     * shape of {@code idx_movement_customer_appended} (data-model.md
+     * §Indexes), guaranteeing a stable order even when several
+     * movements share the same {@code appended_at} (high-throughput
+     * insert burst).
+     *
+     * <p>Returning {@link Page} (not {@link List}) lets the caller read
+     * {@code totalElements} from the same round-trip: Spring Data
+     * issues an additional {@code SELECT COUNT(*)} only when
+     * {@link Page#getTotalElements()} is consumed, which the read
+     * controller does to populate the response envelope.
+     */
+    Page<MovementJpaEntity> findByCustomerIdOrderByAppendedAtDescIdDesc(UUID customerId, Pageable pageable);
+
+    /**
+     * REQ-010 — absolute count for a customer. Spring Data autogenerates
+     * the {@code SELECT COUNT(*)}; declared explicitly so callers do
+     * not have to depend on {@link Page#getTotalElements()} when they
+     * only need the total (e.g. tests that pre-seed N rows and want to
+     * assert the seed succeeded).
+     */
+    long countByCustomerId(UUID customerId);
 }

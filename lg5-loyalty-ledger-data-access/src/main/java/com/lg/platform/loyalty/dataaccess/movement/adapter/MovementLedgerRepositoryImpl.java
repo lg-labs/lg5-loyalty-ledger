@@ -4,10 +4,13 @@ import com.lg.platform.loyalty.application.ports.output.repository.MovementLedge
 import com.lg.platform.loyalty.dataaccess.movement.mapper.MovementDataAccessMapper;
 import com.lg.platform.loyalty.dataaccess.movement.repository.MovementJpaRepository;
 import com.lg.platform.loyalty.domain.entity.Movement;
+import com.lg.platform.loyalty.domain.valueobject.CustomerId;
 import com.lg.platform.loyalty.domain.valueobject.MovementId;
 import com.lg.platform.loyalty.domain.valueobject.OrderId;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -47,5 +50,19 @@ public class MovementLedgerRepositoryImpl implements MovementLedgerRepository {
     @Override
     public int sumPositiveDeltaForOrder(final OrderId originatingOrderId) {
         return movementJpaRepository.sumPositiveDeltaForOrder(originatingOrderId.getValue());
+    }
+
+    @Override
+    public List<Movement> findPageByCustomer(final CustomerId customerId, final int page, final int size) {
+        return movementJpaRepository
+                .findByCustomerIdOrderByAppendedAtDescIdDesc(customerId.getValue(), PageRequest.of(page, size))
+                .stream()
+                .map(movementDataAccessMapper::entityToMovement)
+                .toList();
+    }
+
+    @Override
+    public long countByCustomer(final CustomerId customerId) {
+        return movementJpaRepository.countByCustomerId(customerId.getValue());
     }
 }

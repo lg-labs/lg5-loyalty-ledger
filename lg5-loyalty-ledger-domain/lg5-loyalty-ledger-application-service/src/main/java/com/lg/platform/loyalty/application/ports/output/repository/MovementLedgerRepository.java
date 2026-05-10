@@ -1,9 +1,11 @@
 package com.lg.platform.loyalty.application.ports.output.repository;
 
 import com.lg.platform.loyalty.domain.entity.Movement;
+import com.lg.platform.loyalty.domain.valueobject.CustomerId;
 import com.lg.platform.loyalty.domain.valueobject.MovementId;
 import com.lg.platform.loyalty.domain.valueobject.OrderId;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -53,4 +55,31 @@ public interface MovementLedgerRepository {
      * before calling this method.
      */
     int sumPositiveDeltaForOrder(OrderId originatingOrderId);
+
+    /**
+     * REQ-010 / TASK-016 — read a single page of movements for one
+     * customer in reverse-chronological order ({@code appended_at
+     * DESC, id DESC}). The sort is mandated by the index
+     * {@code idx_movement_customer_appended} (data-model.md §Indexes)
+     * and provides a stable order even when several rows share the
+     * same {@code appended_at}.
+     *
+     * <p>Out-of-range page indexes return an empty list (NOT a
+     * {@code 404}); callers compare the size against
+     * {@link #countByCustomer(CustomerId)} when they need to detect
+     * that condition.
+     *
+     * @param customerId customer to read
+     * @param page       0-based page index
+     * @param size       page size
+     * @return ordered list (may be empty), never {@code null}.
+     */
+    List<Movement> findPageByCustomer(CustomerId customerId, int page, int size);
+
+    /**
+     * REQ-010 — absolute count of movements for one customer. Used by
+     * the read controller to populate {@code totalElements} in the
+     * response envelope.
+     */
+    long countByCustomer(CustomerId customerId);
 }

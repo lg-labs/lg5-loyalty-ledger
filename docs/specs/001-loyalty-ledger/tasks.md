@@ -296,7 +296,7 @@ work (M2-M3).
 
 ## TASK-016 — REST controller `GET /loyalty/customers/{id}/movements?page=&size=` (reverse-chronological paged)
 
-- **Status:** todo
+- **Status:** done
 - **References:** REQ-010, REQ-013, RULE-005, RULE-006
 - **Depends on:** TASK-005
 - **Modules touched:** `lg5-loyalty-ledger-api`
