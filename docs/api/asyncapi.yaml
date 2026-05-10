@@ -1,0 +1,292 @@
+asyncapi: '2.6.0'
+info:
+  title: Loyalty Ledger Async API
+  version: 1.0.0
+  description: |
+    Kafka surface for the loyalty-ledger service.
+
+    Three inbound business events drive the ledger; one outbound
+    domain event is published via the Transactional Outbox after a
+    movement is appended.
+
+    Topic names mirror `loyalty-ledger-service.topics.*` in
+    `lg5-loyalty-ledger-container/src/main/resources/config/application.yaml`.
+
+    Schemas are embedded inline as JSON-Schema mirrors of the
+    canonical Avro `.avsc` files under
+    `lg5-loyalty-ledger-message/lg5-loyalty-ledger-message-model/src/main/resources/avro/`.
+    The Avro file is the source of truth for serialisation; this
+    spec documents the wire shape for human readers and AsyncAPI
+    tooling.
+  contact:
+    name: lg-labs platform team
+    url: https://github.com/lg-labs/lg5-loyalty-ledger
+    email: platform@lg-labs.example
+  license:
+    name: Proprietary
+    url: https://github.com/lg-labs/lg5-loyalty-ledger
+defaultContentType: application/avro
+tags:
+  - name: loyalty
+    description: Loyalty ledger inbound + outbound Kafka surface.
+servers:
+  kafka:
+    url: '{bootstrap-servers}'
+    protocol: kafka
+    description: Kafka cluster — bootstrap servers injected at deploy time.
+    variables:
+      bootstrap-servers:
+        default: localhost:9092,localhost:9093,localhost:9094
+        description: Comma-separated bootstrap servers.
+channels:
+  order-paid:
+    description: |
+      Inbound business event consumed by the loyalty-ledger.
+      Each accepted message produces an `ORDER_PAID` credit movement
+      and updates the customer's balance projection.
+      Consumer group: `lg5-loyalty-ledger-order-paid`.
+    subscribe:
+      operationId: consumeOrderPaid
+      summary: Consume `OrderPaid` business events.
+      description: |
+        Idempotent consumer — the `(messageId, eventType)` pair is
+        deduped via the `processed_messages` table before any side
+        effect is applied (RULE-010, ADR-003).
+      message:
+        $ref: '#/components/messages/OrderPaid'
+  order-cancelled:
+    description: |
+      Inbound business event consumed by the loyalty-ledger.
+      Each accepted message produces an `ORDER_CANCELLED` debit
+      movement.
+      Consumer group: `lg5-loyalty-ledger-order-cancelled`.
+    subscribe:
+      operationId: consumeOrderCancelled
+      summary: Consume `OrderCancelled` business events.
+      description: |
+        Idempotent consumer — see `order-paid` channel for the
+        deduplication contract.
+      message:
+        $ref: '#/components/messages/OrderCancelled'
+  order-refunded:
+    description: |
+      Inbound business event consumed by the loyalty-ledger.
+      Each accepted message produces an `ORDER_REFUNDED` debit
+      movement.
+      Consumer group: `lg5-loyalty-ledger-order-refunded`.
+    subscribe:
+      operationId: consumeOrderRefunded
+      summary: Consume `OrderRefunded` business events.
+      description: |
+        Idempotent consumer — see `order-paid` channel for the
+        deduplication contract.
+      message:
+        $ref: '#/components/messages/OrderRefunded'
+  customer-balance-updated:
+    description: |
+      Outbound domain event published by the outbox scheduler after
+      a movement has been atomically appended and the projection
+      updated. Published via the Transactional Outbox pattern — the
+      relay reads `outbox` rows in `STARTED` state, publishes, then
+      flips them to `COMPLETED`. Kafka key is `customerId` so all
+      events for the same customer land on the same partition and
+      preserve per-customer ordering.
+    publish:
+      operationId: publishCustomerBalanceUpdated
+      summary: Publish `CustomerBalanceUpdated` domain events.
+      description: |
+        Emitted exactly once per appended movement (modulo at-least-once
+        Kafka redelivery, which downstream consumers MUST handle by
+        deduping on `messageId`).
+      message:
+        $ref: '#/components/messages/CustomerBalanceUpdated'
+    bindings:
+      kafka:
+        bindingVersion: '0.4.0'
+        topic: customer-balance-updated
+components:
+  messages:
+    OrderPaid:
+      name: OrderPaid
+      title: OrderPaid business event
+      summary: A customer's order has been paid.
+      description: |
+        Avro schema:
+        `lg5-loyalty-ledger-message/lg5-loyalty-ledger-message-model/src/main/resources/avro/order_paid.avsc`
+        (record `com.lg.platform.order.kafka.avro.model.OrderPaidAvroModel`).
+      contentType: application/avro
+      payload:
+        $ref: '#/components/schemas/OrderPaidAvroModel'
+      bindings:
+        kafka:
+          bindingVersion: '0.4.0'
+          key:
+            type: string
+            description: Kafka key (producer-side decision; loyalty-ledger does not enforce a particular key here).
+    OrderCancelled:
+      name: OrderCancelled
+      title: OrderCancelled business event
+      summary: A customer's order has been cancelled.
+      description: |
+        Avro schema:
+        `lg5-loyalty-ledger-message/lg5-loyalty-ledger-message-model/src/main/resources/avro/order_cancelled.avsc`
+        (record `com.lg.platform.order.kafka.avro.model.OrderCancelledAvroModel`).
+      contentType: application/avro
+      payload:
+        $ref: '#/components/schemas/OrderCancelledAvroModel'
+      bindings:
+        kafka:
+          bindingVersion: '0.4.0'
+          key:
+            type: string
+            description: Kafka key (producer-side decision).
+    OrderRefunded:
+      name: OrderRefunded
+      title: OrderRefunded business event
+      summary: A customer's order has been refunded.
+      description: |
+        Avro schema:
+        `lg5-loyalty-ledger-message/lg5-loyalty-ledger-message-model/src/main/resources/avro/order_refunded.avsc`
+        (record `com.lg.platform.order.kafka.avro.model.OrderRefundedAvroModel`).
+      contentType: application/avro
+      payload:
+        $ref: '#/components/schemas/OrderRefundedAvroModel'
+      bindings:
+        kafka:
+          bindingVersion: '0.4.0'
+          key:
+            type: string
+            description: Kafka key (producer-side decision).
+    CustomerBalanceUpdated:
+      name: CustomerBalanceUpdated
+      title: CustomerBalanceUpdated domain event
+      summary: A customer's loyalty balance has been updated.
+      description: |
+        Avro schema:
+        `lg5-loyalty-ledger-message/lg5-loyalty-ledger-message-model/src/main/resources/avro/customer_balance_updated.avsc`
+        (record `com.lg.platform.loyalty.kafka.avro.model.CustomerBalanceUpdatedAvroModel`).
+      contentType: application/avro
+      payload:
+        $ref: '#/components/schemas/CustomerBalanceUpdatedAvroModel'
+      bindings:
+        kafka:
+          bindingVersion: '0.4.0'
+          key:
+            type: string
+            format: uuid
+            description: |
+              Kafka partition key — the `customerId` UUID rendered as a
+              string. Co-locates all events for the same customer on
+              the same partition so per-customer ordering is preserved
+              end-to-end.
+  schemas:
+    OrderPaidAvroModel:
+      type: object
+      description: Mirror of `order_paid.avsc`.
+      required: [messageId, customerId, orderId, paidAmount, createdAt]
+      properties:
+        messageId:
+          type: string
+          format: uuid
+          description: Idempotency key used by the consumer-side dedup gate.
+        customerId:
+          type: string
+          format: uuid
+        orderId:
+          type: string
+          format: uuid
+        paidAmount:
+          type: string
+          description: |
+            Avro `decimal(precision=10, scale=2)`. Wire format is
+            `bytes`; rendered as a decimal string for human readers.
+        createdAt:
+          type: integer
+          format: int64
+          description: Avro `timestamp-millis` — epoch millis.
+    OrderCancelledAvroModel:
+      type: object
+      description: Mirror of `order_cancelled.avsc`.
+      required: [messageId, customerId, orderId, createdAt]
+      properties:
+        messageId:
+          type: string
+          format: uuid
+        customerId:
+          type: string
+          format: uuid
+        orderId:
+          type: string
+          format: uuid
+        createdAt:
+          type: integer
+          format: int64
+          description: Avro `timestamp-millis` — epoch millis.
+    OrderRefundedAvroModel:
+      type: object
+      description: Mirror of `order_refunded.avsc`.
+      required: [messageId, customerId, orderId, createdAt]
+      properties:
+        messageId:
+          type: string
+          format: uuid
+        customerId:
+          type: string
+          format: uuid
+        orderId:
+          type: string
+          format: uuid
+        createdAt:
+          type: integer
+          format: int64
+          description: Avro `timestamp-millis` — epoch millis.
+    CustomerBalanceUpdatedAvroModel:
+      type: object
+      description: Mirror of `customer_balance_updated.avsc`.
+      required:
+        - messageId
+        - customerId
+        - newBalance
+        - delta
+        - cause
+        - originatingOrderId
+        - originatingEventId
+        - originatingEventType
+        - occurredAt
+      properties:
+        messageId:
+          type: string
+          format: uuid
+          description: Outbox row id; doubles as the consumer-side dedup key.
+        customerId:
+          type: string
+          format: uuid
+        newBalance:
+          type: integer
+          format: int64
+          description: Resulting balance after applying the movement.
+        delta:
+          type: integer
+          format: int32
+          description: Signed delta (positive credit, negative debit).
+        cause:
+          type: string
+          enum: [ORDER_PAID, ORDER_CANCELLED, ORDER_REFUNDED, UNKNOWN]
+          description: |
+            Avro enum `BalanceUpdateCause` (default `UNKNOWN` for
+            forward-compat with consumers built against an older schema).
+        originatingOrderId:
+          type: string
+          format: uuid
+          description: REQ-014 — id of the originating business order.
+        originatingEventId:
+          type: string
+          format: uuid
+          description: REQ-014 — id of the inbound business event.
+        originatingEventType:
+          type: string
+          description: REQ-014 — type name of the inbound business event.
+        occurredAt:
+          type: integer
+          format: int64
+          description: Avro `timestamp-millis` — epoch millis.
