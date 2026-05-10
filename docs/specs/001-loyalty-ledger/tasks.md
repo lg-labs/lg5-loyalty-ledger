@@ -206,16 +206,18 @@ work (M2-M3).
 
 ## TASK-010b — Kafka listener + config for `order-refunded`
 
-- **Status:** todo
+- **Status:** done
 - **References:** REQ-004, REQ-005, REQ-015, RULE-007, RULE-010, RULE-014
 - **Depends on:** TASK-008
-- **Modules touched:** `lg5-loyalty-ledger-message-core`
+- **Modules touched:** `lg5-loyalty-ledger-message-core`, `lg5-loyalty-ledger-container` (IT)
 - **Skill:** `lg5-kafka-avro`
 - **Command / Subagent:** `/add-kafka-listener lg5-loyalty-ledger order-refunded OrderRefundedAvroModel`
 - **Acceptance:**
   - **Given** a Kafka Testcontainers broker with the `order-refunded` topic
   - **When** an `OrderRefundedAvroModel` is produced
   - **Then** the listener invokes the application-service exactly once with the refund command; same NO-OP swallow contract as TASK-009.
+
+> Completed by adding `OrderRefundedKafkaListener` (mirrors `OrderPaidKafkaListener` and `OrderCancelledKafkaListener` structurally — `KafkaConsumer<OrderRefundedAvroModel>`, batch listener, NO-OP swallow on `OptimisticLockingFailureException` + `DataIntegrityViolationException`) and `OrderRefundedKafkaListenerIT` (mirrors the cancelled IT — Postgres + Kafka testcontainers, `@MockitoBean LoyaltyLedgerInputPort`, single-message-then-verify-once, asserts `OrderRefundedCommand` with eventId, customerId, orderId, eventType=`"OrderRefunded"`). Topic / consumer-group already wired in `application.yaml` from M1 scaffold (`loyalty-ledger-service.topics.inbound.order-refunded` + `loyalty-ledger-service.consumer-groups.order-refunded`). Mapper `InboundOrderEventAvroMapper.toCommand(OrderRefundedAvroModel)` already shipped in TASK-008. Uses the unified `@TestPropertySource` pattern established in commit `7c7f8ea` (no per-IT property overrides → shared Spring TestContext cache → shared testcontainers).
 
 ## TASK-011 — Application-service handler: dedup gate + movement append + balance update + domain event raise + outbox payload persist
 
