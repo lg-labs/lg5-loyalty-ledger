@@ -146,7 +146,7 @@ work (M2-M3).
 
 ## TASK-007 — JPA entity + repository for `processed_input_event` + `outbox`
 
-- **Status:** in_progress
+- **Status:** done
 - **References:** REQ-003, REQ-005, REQ-006, REQ-014, REQ-015, RULE-008, ADR-003
 - **Depends on:** TASK-003, TASK-004
 - **Modules touched:** `lg5-loyalty-ledger-data-access`
@@ -156,6 +156,8 @@ work (M2-M3).
   - **Given** the `processed_input_event` and `outbox` tables from TASK-004
   - **When** an IT inserts the same `(originating_event_type, originating_event_id)` twice
   - **Then** the second insert raises `DataIntegrityViolationException` against `uq_processed_event_type_id` (this is the dedup mechanism, ADR-003); both entities carry `@Version` and `OutboxStatus`/`ProcessedInputEventOutcome` are mapped via `@Enumerated(EnumType.STRING)`; the outbox repository follows the standard framework shape from `/add-outbox` (`findAllByOutboxStatusOrderByCreatedAtAsc`, `save`).
+
+> Completed in commit <sha-placeholder>; `ProcessedInputEventJpaEntity` declares `@UniqueConstraint(uq_processed_event_type_id)` mirroring the Liquibase index; `OutboxJpaEntity` reuses `com.lg5.spring.outbox.OutboxStatus`. `ProcessedInputEventAndOutboxRepositoryIT` (5 tests) covers: duplicate (eventType,eventId) → `DataIntegrityViolationException`, distinct ids accepted, outcome ENUM round-trip, STARTED rows returned in `createdAt` order, status flip via `markCompleted`. `/add-outbox` subagent NOT invoked — implemented inline using framework primitives + the standard outbox shape from food-ordering-system.
 
 ## TASK-008 — Mapper Avro inbound → domain (`OrderPaid|Cancelled|Refunded` → input port command)
 
