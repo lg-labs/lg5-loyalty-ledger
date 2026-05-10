@@ -1,0 +1,29 @@
+spring:
+  application:
+    name: lg5-loyalty-ledger
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+
+# Disable scheduler in test profile (RULE-012)
+scheduling:
+  enabled: false
+
+# Testcontainers gates default OFF; ATDD enables individually (RULE-013)
+testcontainers:
+  postgres:
+    enabled: false
+  kafka:
+    enabled: false
+  schema-registry:
+    enabled: false
+
+application:
+  image:
+    name: lg5-loyalty-ledger
+  traces:
+    console:
+      enabled: true
+    file:
+      enabled: false

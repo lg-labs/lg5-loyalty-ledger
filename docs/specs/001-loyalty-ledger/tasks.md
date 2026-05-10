@@ -55,7 +55,7 @@ work (M2-M3).
 
 ## TASK-001 — Scaffold the 8-module service from `blank-service`
 
-- **Status:** todo
+- **Status:** done
 - **References:** RULE-002, RULE-004, RULE-005, RULE-014, ADR-001 (no saga modules)
 - **Depends on:** —
 - **Modules touched:** all 8 (creation)
@@ -65,6 +65,8 @@ work (M2-M3).
   - **Given** an empty repo (only `AGENTS.md`, `README.md`, `.agent-os/`, `docs/specs/001-loyalty-ledger/`)
   - **When** the scaffold command finishes
   - **Then** the working tree contains the 8 modules from RULE-004 (`-domain/{-domain-core,-application-service}`, `-api`, `-data-access`, `-message/{-message-core,-message-model}`, `-container`, `-acceptance-test`, `-support`), each with a `pom.xml`, no module under `src/main/java/**` references custom framework annotations (RULE-005), and all module `pom.xml` files declare the parent `com.lg5.spring:lg5-spring-parent:1.0.0-alpha.cbb6783` (RULE-002).
+
+> Completed in commit <sha-placeholder>; ATDD modules empty, skeleton compiles green.
 
 ## TASK-002 — Verify build + wire `application.yaml` test/local profiles
 
