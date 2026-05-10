@@ -283,7 +283,7 @@ work (M2-M3).
 
 ## TASK-015 — REST controller `GET /loyalty/customers/{id}/balance`
 
-- **Status:** todo
+- **Status:** done
 - **References:** REQ-009, RULE-005, RULE-006
 - **Depends on:** TASK-006
 - **Modules touched:** `lg5-loyalty-ledger-api`
