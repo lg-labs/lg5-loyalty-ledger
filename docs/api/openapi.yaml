@@ -1,0 +1,340 @@
+openapi: 3.1.0
+info:
+  title: Loyalty Ledger API
+  version: 1.0.0
+  description: |
+    Read-side REST API for the loyalty-ledger service.
+
+    Spec-first: this document is the source of truth. The
+    `swagger-request-validator-restassured` filter wired into every
+    REST integration test enforces that every response matches this
+    spec; CI fails on drift.
+
+    All responses use the vendor-versioned media type
+    `application/vnd.api.v1+json` (RULE-006).
+  contact:
+    name: lg-labs platform team
+    url: https://github.com/lg-labs/lg5-loyalty-ledger
+  license:
+    name: Proprietary
+servers:
+  - url: http://localhost:8181
+    description: Local dev server (default `server.port` from container `application.yaml`).
+tags:
+  - name: loyalty
+    description: Read-side endpoints for the loyalty ledger.
+paths:
+  /loyalty/customers/{customerId}/balance:
+    get:
+      tags: [loyalty]
+      operationId: getCustomerBalance
+      summary: Get the current point balance for a customer.
+      description: |
+        Returns the projected current balance for the given customer.
+
+        - `200` — balance row exists; body is the projection.
+        - `400` — `customerId` is not a valid UUID.
+        - `404` — no balance row for this customer (no inbound business
+          event has been processed yet for them).
+        - `405` — any verb other than `GET` on this path.
+        - `500` — unexpected server error; response carries a
+          server-minted `traceId` for support correlation.
+      parameters:
+        - $ref: '#/components/parameters/CustomerIdPath'
+      responses:
+        '200':
+          description: Current balance.
+          content:
+            application/vnd.api.v1+json:
+              schema:
+                $ref: '#/components/schemas/CustomerBalanceResponse'
+              examples:
+                positive:
+                  summary: Positive balance.
+                  value:
+                    customerId: 4f6c1d3a-9b2e-4a51-8b6f-2a1c0e9d7b34
+                    balance: 42
+                    lastUpdatedAt: '2026-05-10T12:34:56.789Z'
+                negative:
+                  summary: Negative balance (REQ-007 — observable via the read API).
+                  value:
+                    customerId: 4f6c1d3a-9b2e-4a51-8b6f-2a1c0e9d7b34
+                    balance: -7
+                    lastUpdatedAt: '2026-05-10T12:34:56.789Z'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/CustomerNotFound'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /loyalty/customers/{customerId}/movements:
+    get:
+      tags: [loyalty]
+      operationId: getCustomerMovements
+      summary: Get a page of ledger movements for a customer.
+      description: |
+        Paged movements ordered `appendedAt DESC, id DESC`.
+
+        - An out-of-range `page` returns `200` with an empty
+          `movements` array and the absolute `totalElements`
+          (REST best-practice — empty page is **not** `404`).
+        - An unknown customer returns `200` with `totalElements = 0`
+          and `movements = []` (the customer simply has no ledger
+          entries — it is not an error).
+        - `page` and `size` are silently clamped server-side: `page`
+          to `>= 0`, `size` to `[1, 100]`. The bounds documented on
+          the parameters describe the contract the server enforces;
+          out-of-bounds inputs are accepted and normalised, never
+          rejected with `400`.
+      parameters:
+        - $ref: '#/components/parameters/CustomerIdPath'
+        - name: page
+          in: query
+          description: Zero-based page index (clamped to `>= 0`).
+          required: false
+          schema:
+            type: integer
+            format: int32
+            minimum: 0
+            default: 0
+        - name: size
+          in: query
+          description: Page size (clamped into `[1, 100]`).
+          required: false
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: One page of movements.
+          content:
+            application/vnd.api.v1+json:
+              schema:
+                $ref: '#/components/schemas/MovementsPageResponse'
+              examples:
+                firstPage:
+                  summary: First page, two movements.
+                  value:
+                    movements:
+                      - id: 6c2d8f10-2b21-4a3a-9c0e-7e2b9d3a1c01
+                        customerId: 4f6c1d3a-9b2e-4a51-8b6f-2a1c0e9d7b34
+                        delta: 10
+                        cause: ORDER_PAID
+                        originatingOrderId: 4d3a1c01-6c2d-8f10-2b21-4a3a9c0e7e2b
+                        originatingEventId: 9d3a1c01-6c2d-8f10-2b21-4a3a9c0e7e2b
+                        originatingEventType: OrderPaid
+                        originatingEventReceivedAt: '2026-05-10T12:33:00.000Z'
+                        appendedAt: '2026-05-10T12:33:00.001Z'
+                      - id: 7c2d8f10-2b21-4a3a-9c0e-7e2b9d3a1c02
+                        customerId: 4f6c1d3a-9b2e-4a51-8b6f-2a1c0e9d7b34
+                        delta: -3
+                        cause: ORDER_REFUNDED
+                        originatingOrderId: 4d3a1c01-6c2d-8f10-2b21-4a3a9c0e7e2c
+                        originatingEventId: 9d3a1c01-6c2d-8f10-2b21-4a3a9c0e7e2c
+                        originatingEventType: OrderRefunded
+                        originatingEventReceivedAt: '2026-05-10T12:32:00.000Z'
+                        appendedAt: '2026-05-10T12:32:00.001Z'
+                    page: 0
+                    size: 20
+                    totalElements: 2
+                emptyPage:
+                  summary: Out-of-range page or unknown customer.
+                  value:
+                    movements: []
+                    page: 999
+                    size: 20
+                    totalElements: 0
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/InternalError'
+components:
+  parameters:
+    CustomerIdPath:
+      name: customerId
+      in: path
+      required: true
+      description: Canonical customer identifier (UUID).
+      schema:
+        type: string
+        format: uuid
+        example: 4f6c1d3a-9b2e-4a51-8b6f-2a1c0e9d7b34
+  responses:
+    BadRequest:
+      description: Malformed request — typically a non-UUID `customerId`.
+      content:
+        application/vnd.api.v1+json:
+          schema:
+            $ref: '#/components/schemas/ErrorDTO'
+          examples:
+            invalidUuid:
+              summary: Non-UUID path variable.
+              value:
+                code: INVALID_REQUEST
+                message: "Parameter 'customerId' is not a valid UUID"
+                traceId: null
+    CustomerNotFound:
+      description: No balance projection row exists for this customer.
+      content:
+        application/vnd.api.v1+json:
+          schema:
+            $ref: '#/components/schemas/ErrorDTO'
+          examples:
+            notFound:
+              summary: Unknown customer.
+              value:
+                code: CUSTOMER_NOT_FOUND
+                message: 'Customer balance not found: 00000000-0000-0000-0000-000000000000'
+                traceId: null
+    MethodNotAllowed:
+      description: Verb not supported on this path (the read API is GET-only).
+      content:
+        application/vnd.api.v1+json:
+          schema:
+            $ref: '#/components/schemas/ErrorDTO'
+          examples:
+            methodNotAllowed:
+              summary: POST on a GET-only resource.
+              value:
+                code: METHOD_NOT_ALLOWED
+                message: "HTTP method 'POST' is not supported on this endpoint."
+                traceId: null
+    InternalError:
+      description: Unexpected server error. Carries a server-minted `traceId`.
+      content:
+        application/vnd.api.v1+json:
+          schema:
+            $ref: '#/components/schemas/ErrorDTO'
+          examples:
+            internal:
+              summary: 5xx with traceId.
+              value:
+                code: INTERNAL
+                message: 'An unexpected error occurred. Reference traceId for support.'
+                traceId: 8a1b2c3d-4e5f-6789-abcd-ef0123456789
+  schemas:
+    CustomerBalanceResponse:
+      type: object
+      description: |
+        REST projection of one `customer_balance` row.
+        Mirrors `com.lg.platform.loyalty.api.dto.CustomerBalanceResponse`.
+      required: [customerId, balance, lastUpdatedAt]
+      properties:
+        customerId:
+          type: string
+          format: uuid
+          description: Canonical customer identifier.
+        balance:
+          type: integer
+          format: int64
+          description: Current point balance. May be negative (REQ-007).
+        lastUpdatedAt:
+          type: string
+          format: date-time
+          description: Timestamp of the last credit/debit applied.
+    MovementResponse:
+      type: object
+      description: |
+        REST projection of one `movement` row.
+        Mirrors `com.lg.platform.loyalty.api.dto.MovementResponse`.
+      required:
+        - id
+        - customerId
+        - delta
+        - cause
+        - originatingOrderId
+        - originatingEventId
+        - originatingEventType
+        - originatingEventReceivedAt
+        - appendedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Movement id.
+        customerId:
+          type: string
+          format: uuid
+          description: Owner of the movement.
+        delta:
+          type: integer
+          format: int32
+          description: Signed delta — positive credit, negative debit.
+        cause:
+          type: string
+          enum: [ORDER_PAID, ORDER_CANCELLED, ORDER_REFUNDED]
+          description: Cause of the ledger entry.
+        originatingOrderId:
+          type: string
+          format: uuid
+          description: REQ-014 — the originating business order id.
+        originatingEventId:
+          type: string
+          format: uuid
+          description: REQ-014 — id of the inbound business event.
+        originatingEventType:
+          type: string
+          description: REQ-014 — type name of the inbound business event.
+        originatingEventReceivedAt:
+          type: string
+          format: date-time
+          description: Timestamp the inbound event was accepted by the listener.
+        appendedAt:
+          type: string
+          format: date-time
+          description: Timestamp the movement was written to the ledger (sort key, descending).
+    MovementsPageResponse:
+      type: object
+      description: |
+        Paged response for the movements endpoint.
+        Mirrors `com.lg.platform.loyalty.api.dto.MovementsPageResponse`
+        (NO `totalPages` field — the record carries only the four
+        fields listed below).
+      required: [movements, page, size, totalElements]
+      properties:
+        movements:
+          type: array
+          description: Movements for this page, ordered `appendedAt DESC, id DESC`. Empty (NOT null) when out of range.
+          items:
+            $ref: '#/components/schemas/MovementResponse'
+        page:
+          type: integer
+          format: int32
+          minimum: 0
+          description: Echo of the requested page index.
+        size:
+          type: integer
+          format: int32
+          minimum: 1
+          description: Echo of the requested page size.
+        totalElements:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Absolute count of movements for this customer (NOT the size of `movements`).
+    ErrorDTO:
+      type: object
+      description: |
+        Uniform error envelope.
+        Mirrors `com.lg.platform.loyalty.api.dto.ErrorDTO`.
+        `traceId` is null for 4xx and a UUID v4 for 5xx (server-minted
+        because Sleuth is intentionally NOT on the classpath — RULE-014).
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          enum: [INVALID_REQUEST, CUSTOMER_NOT_FOUND, METHOD_NOT_ALLOWED, INTERNAL]
+          description: Stable machine-readable error code.
+        message:
+          type: string
+          description: Human-readable, sanitised description.
+        traceId:
+          type: [string, 'null']
+          description: Server-minted UUID for 5xx; null for 4xx.
