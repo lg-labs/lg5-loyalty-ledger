@@ -42,24 +42,31 @@ This feature does not produce Maven modules. The deliverables are:
 
 ```
 <repo-root>/
-├── docs/                                       # NEW — VitePress source tree
-│   ├── .vitepress/
-│   │   ├── config.ts                           # base path read from env var
-│   │   └── theme/                              # default theme + minor overrides
-│   ├── index.md                                # home page (REQ-001, REQ-002…REQ-007 links)
-│   ├── architecture/                           # embeds dependency-graph.png + gource.mp4 (REQ-002)
-│   ├── api/                                    # embeds Swagger UI HTML wrapper (REQ-003)
-│   ├── events/                                 # embeds AsyncAPI Studio HTML wrapper (REQ-004)
-│   ├── adr/                                    # ADR index page (REQ-006)
-│   ├── runbook/                                # onboarding runbook stub (REQ-007)
-│   └── public/                                 # static assets
-├── firebase.json                               # NEW — hosting targets for two sites
-├── .firebaserc                                 # NEW — project alias `lglabs-loyalty`
-├── package.json                                # NEW — VitePress + firebase-tools devDeps
-├── pnpm-lock.yaml (or package-lock.json)       # NEW — lock file
-├── Makefile                                    # MODIFIED — add docs targets (RULE-017)
-└── .github/workflows/c-integration.yml         # MODIFIED — add docs jobs
+├── docs/
+│   ├── specs/                                  (existing — SDD specs)
+│   └── site/                                   # NEW — all Node tooling lives here
+│       ├── .vitepress/
+│       │   ├── config.ts                       # base path read from env var
+│       │   └── theme/                          # default theme + minor overrides
+│       ├── index.md                            # home page (REQ-001, REQ-002…REQ-007 links)
+│       ├── architecture/                       # embeds dependency-graph.png + gource.mp4 (REQ-002)
+│       ├── api/                                # embeds Swagger UI HTML wrapper (REQ-003)
+│       ├── events/                             # embeds AsyncAPI Studio HTML wrapper (REQ-004)
+│       ├── adr/                                # ADR index page (REQ-006)
+│       ├── runbook/                            # onboarding runbook stub (REQ-007)
+│       ├── public/                             # static assets
+│       ├── scripts/                            # check-artifacts.mjs + linkinator-to-annotations.mjs
+│       ├── firebase.json                       # NEW — hosting targets for two sites
+│       ├── .firebaserc                         # NEW — project alias `lglabs-loyalty`
+│       ├── package.json                        # NEW — VitePress + firebase-tools devDeps
+│       └── pnpm-lock.yaml                      # NEW — lock file
+├── Makefile                                    # MODIFIED — add docs targets (RULE-017), all `cd docs/site` first
+└── .github/workflows/c-integration.yml         # MODIFIED — add docs jobs (working-directory: docs/site)
 ```
+
+**Layout decision (2026-05-11)**: All Node tooling lives inside
+`docs/site/` (decided after initial Plan/Design). The repo root stays
+Maven-pure. See `design.md` §1 + §11 for the rationale.
 
 The existing Maven modules (`loyalty-ledger-domain-*`,
 `loyalty-ledger-api`, `loyalty-ledger-data-access`,
