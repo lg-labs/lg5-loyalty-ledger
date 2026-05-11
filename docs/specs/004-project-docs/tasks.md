@@ -430,7 +430,7 @@ No cycles. TASK-001 and TASK-005 are roots; TASK-012 is the unique sink.
 
 ## TASK-010 — Author the onboarding runbook stub at `docs/site/runbook/index.md`
 
-- **Status:** todo
+- **Status:** done (commit `0485a4b`)
 - **References:** REQ-007
 - **Depends on:** TASK-002
 - **Modules touched:** `docs/site/runbook/index.md` (deliverable)
