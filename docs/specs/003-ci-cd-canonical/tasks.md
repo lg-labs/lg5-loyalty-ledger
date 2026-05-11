@@ -58,18 +58,18 @@ lint).
 
 ## Tasks (atomic; single milestone)
 
-| ID | Description | Acceptance |
-|----|-------------|------------|
-| TASK-001 | Run `/scaffold-ci-cd loyalty-ledger` (steps 1–6, skip 7). | Files present in expected paths; placeholders rewritten from `blank-` to `lg5-loyalty-ledger-`. |
-| TASK-002 | Append `schema-compat` job (verbatim from current `ci.yml`) into the new `c-integration.yml`. Re-target `needs:` from `build` → `setup` so it runs in parallel earlier. | Workflow valid; job runs after `setup`. |
-| TASK-003 | Append `api-specs-lint` job (verbatim from current `ci.yml`) into `c-integration.yml`. No `needs:` (independent of Maven). | Workflow valid; job runs at the same level as `setup`. |
-| TASK-004 | Delete `.github/workflows/ci.yml` (the legacy 4-job workflow). | Only `c-integration.yml` remains under `.github/workflows/`. |
-| TASK-005 | Run `actionlint` on the new workflow locally. Fix any findings. | `actionlint` exit 0. |
-| TASK-006 | Verify ATDD module still compiles with new Allure deps + `AcceptanceTestRunnerIT` plugin string. Run `JAVA_HOME=… mvn -pl lg5-loyalty-ledger-acceptance-test -am test-compile` locally. | Compile succeeds. |
-| TASK-007 | Push branch, open PR, watch all 12 jobs (10 canonical + 2 preserved; `docs` removed per ADR-003). Investigate any red. | All checks green. |
-| TASK-008 | Squash-merge to `main` after approval. | `main` HEAD on the new commit; feature branch deleted. |
-| TASK-009 | Author milestone report `reports/M1-completion.md` summarizing diffs vs. canonical, deviations (incl. `docs` job removal per ADR-003), and follow-ups (mainly feature 004 — VitePress + Firebase + Pages). | Report committed. |
-| TASK-010 | Remove canonical `docs` (MkDocs) job from `c-integration.yml`; add ADR-003 documenting deferral to feature 004 (VitePress). Replace job block with a NOTE comment pointing to ADR-003. Keep `dependency-graph` and `gource` upload-artifact steps in `build` and `visualization` (feat 004 will consume them). | `docs` job absent; ADR-003 present; CI green; upstream artifacts still produced. |
+| ID | Description | Acceptance | Status |
+|----|-------------|------------|--------|
+| TASK-001 | Run `/scaffold-ci-cd loyalty-ledger` (steps 1–6, skip 7). | Files present in expected paths; placeholders rewritten from `blank-` to `lg5-loyalty-ledger-`. | done (`737a6d9`) |
+| TASK-002 | Append `schema-compat` job (verbatim from current `ci.yml`) into the new `c-integration.yml`. Re-target `needs:` from `build` → `setup` so it runs in parallel earlier. | Workflow valid; job runs after `setup`. | done (`737a6d9`) |
+| TASK-003 | Append `api-specs-lint` job (verbatim from current `ci.yml`) into `c-integration.yml`. No `needs:` (independent of Maven). | Workflow valid; job runs at the same level as `setup`. | done (`737a6d9`) |
+| TASK-004 | Delete `.github/workflows/ci.yml` (the legacy 4-job workflow). | Only `c-integration.yml` remains under `.github/workflows/`. | done (`737a6d9`) |
+| TASK-005 | Run `actionlint` on the new workflow locally. Fix any findings. | `actionlint` exit 0. | done (verified pre-`f1cf924`) |
+| TASK-006 | Verify ATDD module still compiles with new Allure deps + `AcceptanceTestRunnerIT` plugin string. Run `JAVA_HOME=… mvn -pl lg5-loyalty-ledger-acceptance-test -am test-compile` locally. | Compile succeeds. | done (CI Build + ATDD green) |
+| TASK-007 | Push branch, open PR, watch all 12 jobs (10 canonical + 2 preserved; `docs` removed per ADR-003). Investigate any red. | All checks green. | done (run `25660948040`, 12/12) |
+| TASK-008 | Squash-merge to `main` after approval. | `main` HEAD on the new commit; feature branch deleted. | done (`5a84182`) |
+| TASK-009 | Author milestone report `reports/M1-completion.md` summarizing diffs vs. canonical, deviations (incl. `docs` job removal per ADR-003), and follow-ups (mainly feature 004 — VitePress + Firebase + Pages). | Report committed. | done |
+| TASK-010 | Remove canonical `docs` (MkDocs) job from `c-integration.yml`; add ADR-003 documenting deferral to feature 004 (VitePress). Replace job block with a NOTE comment pointing to ADR-003. Keep `dependency-graph` and `gource` upload-artifact steps in `build` and `visualization` (feat 004 will consume them). | `docs` job absent; ADR-003 present; CI green; upstream artifacts still produced. | done (`f1cf924`) |
 
 ## Verification gates
 
