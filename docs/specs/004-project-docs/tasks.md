@@ -167,7 +167,7 @@ No cycles. TASK-001 and TASK-005 are roots; TASK-012 is the unique sink.
 
 ## TASK-003 — Implement `docs/site/scripts/check-artifacts.mjs`
 
-- **Status:** todo
+- **Status:** done (commit `a1bba7c`)
 - **References:** REQ-019; ADR-001 (VitePress)
 - **Depends on:** TASK-002
 - **Modules touched:** `docs/site/scripts/check-artifacts.mjs` (deliverable)
