@@ -85,12 +85,12 @@ actually see.
 
 ## 8. Open questions
 
-| Question | Decider | Due |
-|---------|---------|-----|
-| [NEEDS CLARIFICATION: how long should an opt-in preview remain reachable after the proposed change is merged or closed?] | stakeholder | before `/sdd-specify` |
-| [NEEDS CLARIFICATION: what is the acceptable freshness lag between a trunk advance and the regenerated surface — minutes? one hour?] | stakeholder | before `/sdd-specify` |
-| [NEEDS CLARIFICATION: should the surface expose historical versions (per release) or only the current trunk state?] | stakeholder | before `/sdd-specify` |
-| [NEEDS CLARIFICATION: what signal does a change author use to opt in to a preview — a label, a commit-message convention, a checkbox?] | stakeholder | before `/sdd-specify` |
+| Question | Decider | Resolution |
+|---------|---------|------------|
+| How long should an opt-in preview remain reachable after the proposed change is merged or closed? | stakeholder | **7 days from the latest opt-in event** (auto-expires; no manual cleanup). |
+| What is the acceptable freshness lag between a trunk advance and the regenerated surface? | stakeholder | **< 10 minutes** end-to-end (trunk advance → published surface). |
+| Should the surface expose historical versions (per release) or only the current trunk state? | stakeholder | **Current trunk state only** (overwrite-on-advance; no per-release history). |
+| What signal does a change author use to opt in to a preview? | stakeholder | **An explicit label applied to the proposed change** named `docs/preview`. |
 
 ## Definition of Done (Intent)
 
