@@ -288,15 +288,23 @@ Two layers:
    ```bash
    pnpm exec linkinator .vitepress/dist \
      --recurse \
-     --skip "^https?://(?!(lglabs-loyalty-docs|lglabs-loyalty-allure)\.web\.app|.+\.github\.io/lg5-loyalty-ledger)" \
+     --skip "^https?://(?!localhost(:\d+)?(/|$)|(lglabs-loyalty-docs|lglabs-loyalty-allure)\.web\.app|.+\.github\.io/lg5-loyalty-ledger)" \
      --silent || true
    ```
 
    - Runs against the local `dist/` (filesystem) — no need to wait for
      the deploy URL to be live.
-   - `--skip` allow-lists the two production hostnames + the Pages URL
-     pattern; everything else (external links) is not crawled to keep
-     the check deterministic.
+   - `--skip` allow-lists `localhost` (with optional port), the two
+     production hostnames + the Pages URL pattern; everything else
+     (external links) is not crawled to keep the check deterministic.
+   - The `localhost` allow-entry is required because `linkinator` in
+     filesystem-input mode spins up an internal HTTP server and
+     rewrites every local resource URL as `http://localhost:<port>/…`
+     before applying `--skip`. Without the `localhost` exception, the
+     entry page itself matches `^https?://` and is skipped before any
+     intra-site link can be parsed (verified empirically: 0 links
+     scanned, 0 warnings emitted, even when `dist/` contains real
+     broken intra-site links). See §11 Q2 for the resolution log.
    - Trailing `|| true` ensures the step **never** fails the job;
      the report is captured as a CI annotation via
      `::warning::` lines emitted by a small wrapper script
@@ -491,7 +499,7 @@ Testcontainers (RULE-013) are **N/A** — no JVM test runtime.
 | Question                                                                                                          | Impact         | Decider         | Due                  | Status |
 |-------------------------------------------------------------------------------------------------------------------|----------------|-----------------|----------------------|--------|
 | Confirm latest stable VitePress / firebase-tools / linkinator at scaffold time; adjust caret pins if drifted.     | Design (minor) | sdd-implementer | scaffold task        | open (resolved at TASK-001) |
-| Should `linkinator` follow external links too, with a longer allow-list, once the team has operational data?      | Design (minor; warn-not-fail keeps it safe either way) | stakeholder | post-launch, not blocking | open |
+| Should `linkinator` follow external links too, with a longer allow-list, once the team has operational data?      | Design (minor; warn-not-fail keeps it safe either way) | stakeholder | post-launch, not blocking | open. **Sub-question resolved 2026-05-11**: the `--skip` regex must allow-list `localhost(:\d+)?` because linkinator's filesystem-input mode rewrites local URLs to `http://localhost:<port>/…` before applying skips. Pattern updated in §7.7 accordingly. |
 | Should the Firebase preview job auto-comment the URL on the PR, or remain log-only?                               | Design (minor UX) | stakeholder  | scaffold task        | **resolved 2026-05-11: auto-comment (option a). See §7.9.** |
 | Layout: where should the Node tooling live — repo root or a subdirectory of `docs/`?                              | Design (layout) | stakeholder    | pre-implement        | **resolved 2026-05-11: `docs/site/`. See §1, §7.2…§7.9.** |
 | Allure report path strategy when `firebase.json` lives in `docs/site/`.                                           | Design (CI step) | stakeholder   | pre-implement        | **resolved 2026-05-11: copy step in `firebase-deploy-allure` job copies `allure-report/` → `docs/site/allure-dist/`. See §7.9.** |
