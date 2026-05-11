@@ -201,7 +201,7 @@ No cycles. TASK-001 and TASK-005 are roots; TASK-012 is the unique sink.
 
 ## TASK-004 — Implement `docs/site/scripts/linkinator-to-annotations.mjs`
 
-- **Status:** todo
+- **Status:** done (commit `0168f61`)
 - **References:** REQ-018; ADR-001 (VitePress)
 - **Depends on:** TASK-001
 - **Modules touched:** `docs/site/scripts/linkinator-to-annotations.mjs` (deliverable)
