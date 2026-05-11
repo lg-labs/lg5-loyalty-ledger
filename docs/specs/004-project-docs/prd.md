@@ -76,7 +76,7 @@ feature shipped.
 | REQ-004 | From the home, expose a one-click navigation entry to the asynchronous service contract. | The home page contains a visible link to the asynchronous service contract; following the link displays the contract content. |
 | REQ-005 | From the home, expose a one-click navigation entry to the latest acceptance-test report. | The home page contains a visible link to the acceptance-test report; following the link displays the report content corresponding to the latest trunk state. |
 | REQ-006 | From the home, expose a one-click navigation entry to the decision-record index. | The home page contains a visible link to the decision-record index; following the link displays the index of decision records. |
-| REQ-007 | From the home, expose a one-click navigation entry to the onboarding runbook. | The home page contains a visible link to the onboarding runbook; following the link displays the runbook content. |
+| REQ-007 | From the home, expose a one-click navigation entry to the onboarding runbook. The runbook in this feature is a minimum-viable stub authored by the stakeholder: a first-day setup checklist, a brief tour of the repository, and links to the other five core entries. | The home page contains a visible link to the onboarding runbook; following the link displays the runbook content with at least the three stated sections. |
 | REQ-008 | The surface must be publicly reachable without any authentication step. | A visitor who has never authenticated against any system can open the well-known location and reach every entry listed in REQ-002…REQ-007. |
 | REQ-009 | The surface must regenerate automatically whenever the trunk advances, with no human action required. | After a trunk advance, the surface reflects the new content within the freshness target, observed without any human-triggered regeneration. |
 | REQ-010 | The end-to-end lag between a trunk advance and the surface reflecting that advance must be under ten minutes. | For each trunk advance, the time between the advance and the surface serving the new content is measurable and below ten minutes. |
@@ -85,6 +85,11 @@ feature shipped.
 | REQ-013 | The shareable preview location must be a location distinct from the main surface, scoped to the proposed change, and shareable as-is (anyone with the location can open it). | Reviewers can open the preview location in a browser without any authentication and see the rendering corresponding to the proposed change. |
 | REQ-014 | A preview must remain reachable for at least seven days after the most recent opt-in event on the proposed change, then expire automatically without manual cleanup. | After seven days with no further opt-in event, the preview location is no longer reachable; no human action is required to make this happen. |
 | REQ-015 | Previews must be opt-in only — proposed changes without the opt-in signal must not produce a preview. | A proposed change that does not carry the `docs/preview` label produces no preview location. |
+| REQ-016 | The set of documentation surfaced by the home is open-ended, starting from the six required entries (REQ-002…REQ-007); additional sections may be added in future advances without contract change. | The site can grow with new sections beyond the six required entries; adding a section does not require revisiting this PRD. |
+| REQ-017 | The surface must offer a local (client-side) search capability across all linked documents. | A visitor can enter a query on the home and receive a list of matching documents reachable in one click from the result. |
+| REQ-018 | A regeneration that detects a broken internal link (a link from one document to another that no longer resolves) must succeed and publish the new state, while emitting a warning in the regeneration log for human follow-up. | A broken internal link does not block publishing; the regeneration log records the broken link as a warning. |
+| REQ-019 | When a trunk advance occurs but the source artifact for one of the six required entries (REQ-002…REQ-007) is missing for that advance, the surface must regenerate and either serve the previous version of that entry with a visible "stale" indicator next to it, or, if no previous version exists, serve a visible placeholder labeled to indicate that no content has been produced yet. | After a trunk advance where one of the six source artifacts is missing, the surface remains reachable and the affected entry shows either a stale indicator on the previous version or a "no content yet" placeholder. |
+| REQ-020 | Each surface (the main surface and every preview) must expose a visible indication of the source state it reflects, containing at minimum the short commit identifier of the source trunk state and a timestamp of the regeneration. Preview surfaces must additionally show the identifier of the proposed change they correspond to. | Any visitor can read the source-state indicator on every surface and identify which trunk state and (for previews) which proposed-change state they are looking at. |
 
 ## 6. Out of scope
 
@@ -95,6 +100,8 @@ feature shipped.
 - **Gated or authenticated access** — _(reason: this is an internal training project with no sensitive data; public reachability is a constraint.)_
 - **Per-release historical archives of the surface** — _(reason: stakeholder decision is current-trunk-only, overwrite-on-advance.)_
 - **Manual republication tooling for operators** — _(reason: regeneration is required to be automatic on trunk advance; a manual lever would contradict REQ-009.)_
+- **Formal accessibility conformance (e.g. WCAG audit) and localization or multi-language support** — _(reason: this is an internal training project; the surface targets a single language with the default accessibility inherited from the underlying presentation; formal conformance can be revisited as a follow-up feature.)_
+- **Custom branding or visual identity (logo, color palette, corporate footer)** — _(reason: stakeholder explicitly accepts a neutral, default presentation; branding can be revisited when a real visual identity exists.)_
 
 ## 7. Acceptance criteria (feature-level)
 
@@ -103,20 +110,27 @@ feature shipped.
 - [ ] A proposed change that applies the `docs/preview` label produces a temporary, shareable preview location reachable without authentication; a proposed change without that label produces no preview.
 - [ ] A preview is reachable for at least seven days after its most recent opt-in event and is no longer reachable beyond that, with no manual cleanup performed.
 - [ ] All entries on the home are reachable without authentication from an environment that has never authenticated against any internal system.
+- [ ] Every surface (main and preview) shows a visible indicator of the source state it reflects (short commit identifier + regeneration timestamp; previews additionally identify the proposed change).
+- [ ] Local (client-side) search across the surface returns at least one result for any term known to appear in any of the six core documents.
+- [ ] When a source artifact is missing for one of the six required entries, the surface still serves successfully — either the previous version with a "stale" indicator, or a placeholder labeled "no content yet" if no previous version exists.
+- [ ] A regeneration with a broken internal link produces a visible warning entry but does not block publishing.
 - [ ] The success-metric targets in §4 are instrumentable: each target can be observed or measured after launch (even if the measurement instrument itself is delivered in a later phase).
 
 ## 8. Open questions
 
-| Question | Decider | Due |
-|---------|---------|-----|
-| [NEEDS CLARIFICATION: Which file types and artifact families count as "documentation" for the purpose of being embedded in or linked from the surface — e.g. plain prose, structured contract documents, generated reports, diagrams, dependency or repository-evolution visualizations? Is the set fixed at the six entries in §5, or open-ended?] | stakeholder | before `/sdd-plan` |
-| [NEEDS CLARIFICATION: What is the expected content of the onboarding runbook (REQ-007) — a checklist for first-day setup, a tour of the codebase, links to the other five documents, or something else? Who owns its content?] | stakeholder | before `/sdd-plan` |
-| [NEEDS CLARIFICATION: Should the surface offer a search capability across all linked documents, or is one-click navigation from the home considered sufficient?] | stakeholder | before `/sdd-plan` |
-| [NEEDS CLARIFICATION: When a regeneration detects a broken internal link inside the surface (a link from one document to another that no longer resolves), should the regeneration fail (and the surface keep serving the previous state) or succeed with a warning (and the surface serve the new state with a broken link)?] | stakeholder | before `/sdd-plan` |
-| [NEEDS CLARIFICATION: When a trunk advance occurs but the source artifact for one of the six required entries is missing (e.g. the latest acceptance-test report has not been produced for this advance), should the surface (a) fail to regenerate, (b) regenerate and omit that entry, (c) regenerate and show the previous version of that entry with a "stale" indicator, or (d) something else?] | stakeholder | before `/sdd-plan` |
-| [NEEDS CLARIFICATION: Are there accessibility expectations the surface must meet (e.g. screen-reader friendliness, contrast levels) and any localization or multi-language expectations, or is a single language with default accessibility acceptable for this internal training project?] | stakeholder | before `/sdd-plan` |
-| [NEEDS CLARIFICATION: Are there visual-identity or branding expectations for the surface (logo, color palette, footer attribution), or is a neutral, unbranded presentation acceptable?] | stakeholder | before `/sdd-plan` |
-| [NEEDS CLARIFICATION: Should the surface and each preview expose a visible indication of which trunk state (or which proposed-change state) they reflect, so a visitor can tell what they are looking at? If yes, what should that indication contain at minimum?] | stakeholder | before `/sdd-plan` |
+_All clarifications raised in the Specify phase have been resolved by
+the stakeholder before `/sdd-plan`. Resolution log:_
+
+| # | Resolved question | Decision |
+|---|------------------|----------|
+| 1 | Which file types and artifact families count as "documentation"? Fixed set or open-ended? | **Open-ended**, starting from the six required entries in REQ-002…REQ-007. Captured as REQ-016. |
+| 2 | Expected content of the onboarding runbook (REQ-007); owner? | **Minimum-viable stub** in this feature: first-day setup checklist + brief repository tour + links to the other five entries. **Owner**: stakeholder (`lglabs`). Captured inline in REQ-007. |
+| 3 | Should the surface offer search? | **Yes — local (client-side) search**. Captured as REQ-017. |
+| 4 | Broken internal links: fail or warn? | **Warn — regeneration succeeds with a warning in the log**. Captured as REQ-018. |
+| 5 | Missing source artifact for a required entry on a trunk advance? | **Serve the previous version with a "stale" indicator**, or a "no content yet" placeholder if no previous version exists. Captured as REQ-019. |
+| 6 | Accessibility / localization expectations? | **None formal**: single language; default accessibility inherited from the underlying presentation. Captured in §6 (out of scope). |
+| 7 | Visual identity / branding expectations? | **Neutral, default presentation**. No custom logo or palette. Captured in §6 (out of scope). |
+| 8 | Visible indicator of source state on each surface? | **Yes — short commit identifier + regeneration timestamp; previews also identify the proposed change**. Captured as REQ-020. |
 
 ## Definition of Done (PRD)
 
