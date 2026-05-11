@@ -98,7 +98,7 @@ No cycles. TASK-001 and TASK-005 are roots; TASK-012 is the unique sink.
 
 ## TASK-001 — Add `docs/site/` Node manifest and pnpm scaffold
 
-- **Status:** todo
+- **Status:** done (commit `e141dcd`)
 - **References:** REQ-001, REQ-016 (foundational precondition for all docs deliverables); ADR-001 (VitePress)
 - **Depends on:** —
 - **Modules touched:** `docs/site/package.json`, `docs/site/pnpm-lock.yaml`, `.gitignore` (deliverables — no Maven module)
