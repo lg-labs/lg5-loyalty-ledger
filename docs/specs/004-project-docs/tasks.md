@@ -459,7 +459,7 @@ No cycles. TASK-001 and TASK-005 are roots; TASK-012 is the unique sink.
 
 ## TASK-011 — Synthetic broken-link + missing-artifact validation in CI
 
-- **Status:** todo
+- **Status:** done (commits `d2a2ba3` mutation + `979d750` revert; validated on CI runs 25686294164 and 25687611259)
 - **References:** REQ-018, REQ-019
 - **Depends on:** TASK-007
 - **Modules touched:** `docs/site/architecture/index.md` (transient broken link), `docs/site/public/dependency-graph.png` (transient deletion / skipped download) — all reverted at TASK end
