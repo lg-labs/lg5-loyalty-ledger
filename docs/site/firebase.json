@@ -1,0 +1,18 @@
+{
+  "hosting": [
+    {
+      "target":        "docs",
+      "public":        ".vitepress/dist",
+      "ignore":        ["firebase.json", "**/.*", "**/node_modules/**"],
+      "cleanUrls":     true,
+      "trailingSlash": false
+    },
+    {
+      "target":        "allure",
+      "public":        "allure-dist",
+      "ignore":        ["firebase.json", "**/.*", "**/node_modules/**"],
+      "cleanUrls":     false,
+      "trailingSlash": false
+    }
+  ]
+}

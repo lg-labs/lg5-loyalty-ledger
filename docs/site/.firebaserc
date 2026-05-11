@@ -1,0 +1,11 @@
+{
+  "projects": { "default": "lglabs-loyalty" },
+  "targets": {
+    "lglabs-loyalty": {
+      "hosting": {
+        "docs":   ["lglabs-loyalty-docs"],
+        "allure": ["lglabs-loyalty-allure"]
+      }
+    }
+  }
+}

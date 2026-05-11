@@ -232,7 +232,7 @@ No cycles. TASK-001 and TASK-005 are roots; TASK-012 is the unique sink.
 
 ## TASK-005 — Add `docs/site/firebase.json` and `docs/site/.firebaserc`
 
-- **Status:** todo
+- **Status:** done (commit `cde1ce0`)
 - **References:** REQ-001, REQ-005, REQ-008, REQ-013; ADR-002 (dual deploy); ADR-003 (separate Allure site); ADR-005 (preview channels)
 - **Depends on:** —
 - **Modules touched:** `docs/site/firebase.json`, `docs/site/.firebaserc` (deliverables)
