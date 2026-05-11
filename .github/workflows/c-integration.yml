@@ -609,16 +609,8 @@ jobs:
       - uses: pnpm/action-setup@v3
         with:
           version: 11.0.9
-      # pnpm 11 ships with `strict-dep-builds=true` by default, which causes
-      # `pnpm install --frozen-lockfile` to fail hard when transitive deps with
-      # build scripts (esbuild/protobufjs/re2 via vitepress) are encountered.
-      # `npm_config_strict_dep_builds=false` is the standard env override pnpm
-      # honours. The proper long-term fix is `pnpm.onlyBuiltDependencies` in
-      # docs/site/package.json, deferred to avoid amending TASK-001.
       - name: Install docs dependencies
         working-directory: ${{ github.workspace }}
-        env:
-          npm_config_strict_dep_builds: "false"
         run: make docs-install
       # --- Download upstream artifacts (4 of them) ---
       - name: Download dependency-graph
@@ -680,8 +672,6 @@ jobs:
           version: 11.0.9
       - name: Install docs dependencies
         working-directory: ${{ github.workspace }}
-        env:
-          npm_config_strict_dep_builds: "false"
         run: make docs-install
       # --- Download upstream artifacts (4 of them) ---
       - name: Download dependency-graph
@@ -779,8 +769,6 @@ jobs:
           version: 11.0.9
       - name: Install docs dependencies
         working-directory: ${{ github.workspace }}
-        env:
-          npm_config_strict_dep_builds: "false"
         run: make docs-install
       - name: Download docs-dist-firebase artifact
         uses: actions/download-artifact@v4
@@ -812,8 +800,6 @@ jobs:
           version: 11.0.9
       - name: Install docs dependencies
         working-directory: ${{ github.workspace }}
-        env:
-          npm_config_strict_dep_builds: "false"
         run: make docs-install
       - name: Download allure-report artifact (from upstream allure job)
         uses: actions/download-artifact@v4

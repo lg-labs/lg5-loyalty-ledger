@@ -52,6 +52,3 @@ docs/site/.vitepress/cache/
 docs/site/allure-dist/
 docs/site/.firebase/
 docs/site/firebase-debug.log
-# pnpm 11 auto-generates this stub for ignored install scripts (esbuild/protobufjs/re2)
-# — local-only, do not commit (placeholders are not actionable values).
-docs/site/pnpm-workspace.yaml
