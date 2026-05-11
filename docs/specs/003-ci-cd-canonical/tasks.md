@@ -36,7 +36,11 @@ lint).
 ## Scope (out, deferred to feature 004)
 
 - Firebase Hosting deployment of the OpenAPI / AsyncAPI / Allure /
-  MkDocs sites. Documented in ADR-002.
+  project-docs sites. Documented in ADR-002.
+- Project documentation site itself. The canonical `docs` job (MkDocs)
+  is removed in this feature; feature 004 reintroduces it built with
+  **VitePress** and dual-deployed to GitHub Pages + Firebase Hosting
+  (project `lglabs-loyalty`). Documented in ADR-003.
 - Container delivery (push image to GHCR / ECR). Bundle does not yet
   ship a `lg5-container-delivery` skill. Deferred sine die.
 - Codacy / Sonar **actual** integration. The `quality` job is a
@@ -62,15 +66,16 @@ lint).
 | TASK-004 | Delete `.github/workflows/ci.yml` (the legacy 4-job workflow). | Only `c-integration.yml` remains under `.github/workflows/`. |
 | TASK-005 | Run `actionlint` on the new workflow locally. Fix any findings. | `actionlint` exit 0. |
 | TASK-006 | Verify ATDD module still compiles with new Allure deps + `AcceptanceTestRunnerIT` plugin string. Run `JAVA_HOME=… mvn -pl lg5-loyalty-ledger-acceptance-test -am test-compile` locally. | Compile succeeds. |
-| TASK-007 | Push branch, open PR, watch all 13 jobs (11 canonical + 2 preserved). Investigate any red. | All checks green. |
+| TASK-007 | Push branch, open PR, watch all 12 jobs (10 canonical + 2 preserved; `docs` removed per ADR-003). Investigate any red. | All checks green. |
 | TASK-008 | Squash-merge to `main` after approval. | `main` HEAD on the new commit; feature branch deleted. |
-| TASK-009 | Author milestone report `reports/M1-completion.md` summarizing diffs vs. canonical, deviations, and follow-ups (mainly feature 004 — Firebase). | Report committed. |
+| TASK-009 | Author milestone report `reports/M1-completion.md` summarizing diffs vs. canonical, deviations (incl. `docs` job removal per ADR-003), and follow-ups (mainly feature 004 — VitePress + Firebase + Pages). | Report committed. |
+| TASK-010 | Remove canonical `docs` (MkDocs) job from `c-integration.yml`; add ADR-003 documenting deferral to feature 004 (VitePress). Replace job block with a NOTE comment pointing to ADR-003. Keep `dependency-graph` and `gource` upload-artifact steps in `build` and `visualization` (feat 004 will consume them). | `docs` job absent; ADR-003 present; CI green; upstream artifacts still produced. |
 
 ## Verification gates
 
 - **Pre-execution gate (this doc + 2 ADRs)**: user approval.
 - **Mid-execution gate (after TASK-005)**: actionlint clean before push.
-- **Post-execution gate (after TASK-007)**: 13/13 green.
+- **Post-execution gate (after TASK-007)**: 12/12 green.
 - **Quality gate (TASK-009)**: report enumerates every deviation from
   the canonical template and links it to its ADR.
 

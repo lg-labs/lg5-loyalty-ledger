@@ -399,42 +399,15 @@ jobs:
         with:
           name: allure-report
           path: ./allure-report
-  docs:
-    name: Docs
-    runs-on: ubuntu-latest
-    needs: [ test, visualization ]
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-python@v6
-        with:
-          python-version: 3.x
-      - uses: actions/cache@v4
-        with:
-          key: ${{ github.ref }}
-          path: .cache
-      - run: pip install mkdocs-material
-      - run: pip install pillow cairosvg
-      - name: Download dependency-graph
-        uses: actions/download-artifact@v5
-        with:
-          name: dependency-graph
-          path: ./lg5-loyalty-ledger-support/app/docs/img
-      - name: Download Gource
-        uses: actions/download-artifact@v5
-        with:
-          name: gource
-          path: ./lg5-loyalty-ledger-support/app/docs/video
-
-      - run: cd ./lg5-loyalty-ledger-support/app && mkdocs build
-
-      - name: Display structure of downloaded files
-        run: ls -R ./lg5-loyalty-ledger-support/app
-
-      - name: Upload MkDocs artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: mkdocs
-          path: ./lg5-loyalty-ledger-support/app/site
+  # NOTE: The canonical `docs` job (MkDocs build + upload) is intentionally
+  # omitted in feature 003. This service will publish project docs via
+  # VitePress in feature 004 (`004-project-docs`), which redesigns this job
+  # to build the VitePress site, publish to GitHub Pages, and deploy to
+  # Firebase Hosting (live + per-PR preview channels). The upstream
+  # `dependency-graph` and `gource` artifacts produced by `build` and
+  # `visualization` are kept; feature 004 will consume them inside the
+  # VitePress site under `architecture/` and `history/`.
+  # See: docs/specs/003-ci-cd-canonical/adr/ADR-003-defer-mkdocs-to-feature-004.md
   visualization:
     name: Visualization
     runs-on: ubuntu-latest
