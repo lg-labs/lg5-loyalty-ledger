@@ -579,3 +579,149 @@ jobs:
             exit 1
           fi
           echo "OK: check-schema-compat is read-only (versions=$after)"
+
+  # ─── DOCS jobs (feat 004 — VitePress build) ───
+  # See docs/specs/004-project-docs/design.md §7.9–§7.10.
+  # Two near-identical jobs: one for GitHub Pages (DOCS_BASE='/lg5-loyalty-ledger/'),
+  # one for Firebase Hosting (DOCS_BASE='/'). Both consume artifacts from the
+  # upstream `build`, `visualization`, `openapi`, and `asyncapi` jobs and place
+  # them under the paths that scripts/check-artifacts.mjs expects.
+  #
+  # Constraint C (stakeholder-decided): upstream `openapi` / `asyncapi` jobs
+  # produce `index.html` (not `swagger-ui.html` / `asyncapi.html`). The download
+  # steps below rename via `cp` so that design.md §7.8 expected paths
+  # (`docs/site/api/swagger-ui.html`, `docs/site/events/asyncapi.html`) hold.
+  # The `openapi.yaml` / `asyncapi.yaml` files inside those artifacts are
+  # intentionally NOT copied under `docs/site/{api,events}/` to avoid VitePress
+  # treating them as routes.
+  docs-build-pages:
+    name: Docs Build (Pages)
+    runs-on: ubuntu-latest
+    needs: [openapi, asyncapi, build, visualization]
+    defaults:
+      run:
+        working-directory: docs/site
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 11.0.9
+      # pnpm 11 ships with `strict-dep-builds=true` by default, which causes
+      # `pnpm install --frozen-lockfile` to fail hard when transitive deps with
+      # build scripts (esbuild/protobufjs/re2 via vitepress) are encountered.
+      # `npm_config_strict_dep_builds=false` is the standard env override pnpm
+      # honours. The proper long-term fix is `pnpm.onlyBuiltDependencies` in
+      # docs/site/package.json, deferred to avoid amending TASK-001.
+      - name: Install docs dependencies
+        working-directory: ${{ github.workspace }}
+        env:
+          npm_config_strict_dep_builds: "false"
+        run: make docs-install
+      # --- Download upstream artifacts (4 of them) ---
+      - name: Download dependency-graph
+        uses: actions/download-artifact@v4
+        with:
+          name: dependency-graph
+          path: docs/site/public
+      - name: Download gource
+        uses: actions/download-artifact@v4
+        with:
+          name: gource
+          path: docs/site/public
+      - name: Download openapi-doc (renamed → swagger-ui.html)
+        uses: actions/download-artifact@v4
+        with:
+          name: openapi-doc
+          path: /tmp/openapi-artifact
+      - name: Place swagger-ui.html into docs/site/api/
+        working-directory: ${{ github.workspace }}
+        run: cp /tmp/openapi-artifact/index.html docs/site/api/swagger-ui.html
+      - name: Download asyncapi-doc (renamed → asyncapi.html)
+        uses: actions/download-artifact@v4
+        with:
+          name: asyncapi-doc
+          path: /tmp/asyncapi-artifact
+      - name: Place asyncapi.html into docs/site/events/
+        working-directory: ${{ github.workspace }}
+        run: cp /tmp/asyncapi-artifact/index.html docs/site/events/asyncapi.html
+      # --- Build with Pages base ---
+      - name: Build VitePress site (Pages base)
+        working-directory: ${{ github.workspace }}
+        run: make docs-build-pages
+      # --- Linkinator broken-link check (warn-not-fail; always exits 0) ---
+      - name: Check links (warn-not-fail)
+        working-directory: ${{ github.workspace }}
+        run: cd docs/site && node scripts/linkinator-to-annotations.mjs
+      # --- Upload artifact ---
+      - name: Upload docs-dist-pages artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docs-dist-pages
+          path: docs/site/.vitepress/dist
+          if-no-files-found: error
+
+  docs-build-firebase:
+    name: Docs Build (Firebase)
+    runs-on: ubuntu-latest
+    needs: [openapi, asyncapi, build, visualization]
+    defaults:
+      run:
+        working-directory: docs/site
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 11.0.9
+      - name: Install docs dependencies
+        working-directory: ${{ github.workspace }}
+        env:
+          npm_config_strict_dep_builds: "false"
+        run: make docs-install
+      # --- Download upstream artifacts (4 of them) ---
+      - name: Download dependency-graph
+        uses: actions/download-artifact@v4
+        with:
+          name: dependency-graph
+          path: docs/site/public
+      - name: Download gource
+        uses: actions/download-artifact@v4
+        with:
+          name: gource
+          path: docs/site/public
+      - name: Download openapi-doc (renamed → swagger-ui.html)
+        uses: actions/download-artifact@v4
+        with:
+          name: openapi-doc
+          path: /tmp/openapi-artifact
+      - name: Place swagger-ui.html into docs/site/api/
+        working-directory: ${{ github.workspace }}
+        run: cp /tmp/openapi-artifact/index.html docs/site/api/swagger-ui.html
+      - name: Download asyncapi-doc (renamed → asyncapi.html)
+        uses: actions/download-artifact@v4
+        with:
+          name: asyncapi-doc
+          path: /tmp/asyncapi-artifact
+      - name: Place asyncapi.html into docs/site/events/
+        working-directory: ${{ github.workspace }}
+        run: cp /tmp/asyncapi-artifact/index.html docs/site/events/asyncapi.html
+      # --- Build with Firebase base (DOCS_BASE='/') ---
+      - name: Build VitePress site (Firebase base)
+        working-directory: ${{ github.workspace }}
+        run: make docs-build-firebase
+      # --- Linkinator broken-link check (warn-not-fail; always exits 0) ---
+      - name: Check links (warn-not-fail)
+        working-directory: ${{ github.workspace }}
+        run: cd docs/site && node scripts/linkinator-to-annotations.mjs
+      # --- Upload artifact ---
+      - name: Upload docs-dist-firebase artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docs-dist-firebase
+          path: docs/site/.vitepress/dist
+          if-no-files-found: error

@@ -297,7 +297,7 @@ No cycles. TASK-001 and TASK-005 are roots; TASK-012 is the unique sink.
 
 ## TASK-007 — Add CI build jobs (`docs-build-pages`, `docs-build-firebase`)
 
-- **Status:** todo
+- **Status:** done (commit `bbf8158`)
 - **References:** REQ-001, REQ-008, REQ-009, REQ-010, REQ-011, REQ-016, REQ-018, REQ-019; RULE-017 (Make targets invoked from CI), RULE-018 (canonical patterns); ADR-004 (dual base-path build)
 - **Depends on:** TASK-002, TASK-003, TASK-004, TASK-006
 - **Modules touched:** `.github/workflows/c-integration.yml` (deliverable, repo root)
