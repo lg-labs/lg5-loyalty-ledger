@@ -128,7 +128,7 @@ No cycles. TASK-001 and TASK-005 are roots; TASK-012 is the unique sink.
 
 ## TASK-002 — Scaffold the VitePress site under `docs/site/`
 
-- **Status:** todo
+- **Status:** done (commit `ba046a2`)
 - **References:** REQ-001, REQ-002, REQ-003, REQ-004, REQ-005, REQ-006, REQ-007, REQ-016, REQ-017, REQ-018, REQ-020; ADR-001 (VitePress); ADR-004 (dual base-path build)
 - **Depends on:** TASK-001
 - **Modules touched:** `docs/site/.vitepress/`, `docs/site/index.md`, `docs/site/architecture/`, `docs/site/api/`, `docs/site/events/`, `docs/site/adr/`, `docs/site/runbook/`, `docs/site/public/` (deliverables — no Maven module)
