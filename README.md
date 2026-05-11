@@ -5,7 +5,8 @@ Microservice built on top of the
 following the conventions packaged in
 [`lg5-spring-agent-os`](https://github.com/lg-labs-pentagon/lg5-spring-agent-os).
 
-> Status: **bootstrap** — feature `001-loyalty-ledger` in the **Specify** phase.
+> Status: **active development** — features 001/002/003 closed and merged
+> to `main`. Next up: `004-project-docs` (VitePress + GitHub Pages + Firebase).
 
 ## Quick start
 
@@ -15,25 +16,33 @@ This repository pins the agent operating layer as a git submodule:
 git clone --recurse-submodules git@github.com:lg-labs/lg5-loyalty-ledger.git
 # or, if you've already cloned without --recurse-submodules:
 git submodule update --init --recursive
+
+# Wire OpenCode symlinks (creates .opencode/ pointing into .agent-os/).
+# Required after fresh clone or after bumping the submodule.
+./.agent-os/scripts/install.sh
 ```
 
-The submodule lives at `.agent-os/` and is pinned to **`lg5-spring-agent-os@v0.3.0`**
-(validated against `lg5-spring` SHA `cbb6783`).
+The submodule lives at `.agent-os/` and is pinned to **`lg5-spring-agent-os@v3.0.0`**
+(validated against `lg5-spring` SHA `d0d754a`).
+
+The `.opencode/` directory (symlinks) is gitignored; each developer
+regenerates it locally via `install.sh`. The bundle artifacts
+themselves (`skills/`, `commands/`, `subagents/`, `AGENTS.md`) live
+inside `.agent-os/` and are the single source of truth.
 
 ## Repository layout (bootstrap)
 
 ```
 lg5-loyalty-ledger/
-├── AGENTS.md                            # consumer thin index → .agent-os/AGENTS.md
+├── AGENTS.md                            # consumer thin index → .opencode/AGENTS.md
 ├── README.md                            # this file
-├── .agent-os/                           # submodule, pinned to v0.3.0
+├── .agent-os/                           # submodule, pinned to v3.0.0
+├── .opencode/                           # gitignored; symlinks → .agent-os/
 └── docs/
     └── specs/
-        └── 001-loyalty-ledger/          # first feature; SDD artifacts land here
-            ├── prd.md
-            ├── plan.md
-            ├── tasks.md
-            └── adr/
+        ├── 001-loyalty-ledger/          # closed
+        ├── 002-api-specifications/      # closed
+        └── 003-ci-cd-canonical/         # closed
 ```
 
 Once Build phase starts, scaffolded modules (`*-domain`, `*-api`, etc.)
@@ -44,15 +53,24 @@ parent will be generated at the repo root.
 
 See [`AGENTS.md`](AGENTS.md) and
 [`.agent-os/specs/README.md`](.agent-os/specs/README.md) for the full
-workflow. The four phases are:
+workflow. As of bundle v3.0.0 the workflow has up to 7 phases (intent
+is optional, verify is mandatory):
 
-1. **`/sdd-specify`** — informal prompt → functional PRD (no technology).
-2. **`/sdd-plan`** — PRD → technical plan + ADRs + data model.
-3. **`/sdd-tasks`** — plan → atomic `TASK-NNN` with Given/When/Then AC.
-4. **`/sdd-implement TASK-NNN`** — execute one task end-to-end (code +
-   tests + commit). Loops until `tasks.md` is exhausted.
+1. **`/sdd-intent`** *(optional)* — informal idea → one-page `intent.md`
+   framing problem/users/outcome (no technology yet).
+2. **`/sdd-specify`** — informal prompt → functional PRD.
+3. **`/sdd-plan`** — PRD → architecture plan + ADRs.
+4. **`/sdd-design`** — plan → `design.md` + `data-model.md` (concrete
+   class signatures, REST contracts, Avro schemas, JPA model).
+5. **`/sdd-tasks`** — design → atomic `TASK-NNN` with Given/When/Then AC.
+6. **`/sdd-implement TASK-NNN`** — execute one task end-to-end (code +
+   tests + commit).
+7. **`/sdd-verify`** — gate: AC↔evidence matrix, constitutional
+   spot-check. **Bloqueante.**
 
 Approval gates are **between phases**, not between individual TASKs.
+Specs closed under the previous 4-phase workflow (001/002/003) remain
+valid; the 7-phase workflow applies to new features (004+).
 
 ## API Specs
 
