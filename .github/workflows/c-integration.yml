@@ -673,12 +673,7 @@ jobs:
       - name: Install docs dependencies
         working-directory: ${{ github.workspace }}
         run: make docs-install
-      # --- Download upstream artifacts (4 of them) ---
-      - name: Download dependency-graph
-        uses: actions/download-artifact@v4
-        with:
-          name: dependency-graph
-          path: docs/site/public
+      # --- Download upstream artifacts (3 of them; dependency-graph removed by TASK-011 synthetic mutation) ---
       - name: Download gource
         uses: actions/download-artifact@v4
         with:
