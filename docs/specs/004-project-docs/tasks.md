@@ -385,7 +385,7 @@ No cycles. TASK-001 and TASK-005 are roots; TASK-012 is the unique sink.
 
 ## TASK-009 — Add CI preview job (`firebase-preview`, label-gated, with PR auto-comment)
 
-- **Status:** todo
+- **Status:** done (commit `3046df5`)
 - **References:** REQ-012, REQ-013, REQ-014, REQ-015, REQ-020; RULE-017, RULE-018; ADR-002 (dual deploy); ADR-005 (label-gated preview channels)
 - **Depends on:** TASK-005, TASK-007
 - **Modules touched:** `.github/workflows/c-integration.yml` (deliverable, repo root)
