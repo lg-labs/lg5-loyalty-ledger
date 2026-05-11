@@ -109,3 +109,30 @@ check-schema-compat:
 
 run-atdd-module:
 	mvn -pl ${ATDD} clean install -Dapplication.traces.file.enabled=${FILE_LOG}
+
+# DOCS (feat 004 — VitePress + Firebase + Pages)
+# All targets cd into docs/site/ first so the developer types `make docs-*`
+# from the repo root and the directory transition is transparent.
+# See docs/specs/004-project-docs/design.md §7.6 for the full table.
+
+.PHONY: docs-install docs-build-pages docs-build-firebase docs-preview-local docs-deploy-pages docs-deploy-firebase
+
+docs-install:
+	cd docs/site && pnpm install --frozen-lockfile
+
+docs-build-pages:
+	cd docs/site && DOCS_BASE='/lg5-loyalty-ledger/' pnpm run docs:build
+
+docs-build-firebase:
+	cd docs/site && DOCS_BASE='/' pnpm run docs:build
+
+docs-preview-local:
+	cd docs/site && pnpm run docs:dev
+
+docs-deploy-pages:
+	@echo "docs-deploy-pages is CI-only (requires GITHUB_TOKEN with pages:write)."
+	@echo "Pages deployment is handled by .github/workflows/c-integration.yml (TASK-008)."
+	@exit 0
+
+docs-deploy-firebase:
+	cd docs/site && pnpm exec firebase deploy --only hosting:docs --project lglabs-loyalty

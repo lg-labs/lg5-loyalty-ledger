@@ -264,7 +264,7 @@ No cycles. TASK-001 and TASK-005 are roots; TASK-012 is the unique sink.
 
 ## TASK-006 — Add docs Makefile targets (root `Makefile`, `cd docs/site` first)
 
-- **Status:** todo
+- **Status:** done (commit `6880683`)
 - **References:** REQ-001, REQ-005, REQ-009, REQ-010 (foundational for CI invocation); RULE-017 (Make-as-canonical-entrypoint)
 - **Depends on:** TASK-001, TASK-005
 - **Modules touched:** `Makefile` (deliverable, repo root)
