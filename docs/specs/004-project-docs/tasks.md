@@ -336,7 +336,7 @@ No cycles. TASK-001 and TASK-005 are roots; TASK-012 is the unique sink.
 
 ## TASK-008 — Add CI deploy jobs (live, main-only): Pages, Firebase docs, Firebase Allure (with copy step)
 
-- **Status:** todo
+- **Status:** done (commit `3aecdf0`)
 - **References:** REQ-001, REQ-005, REQ-008, REQ-009, REQ-010, REQ-011; RULE-017, RULE-018; ADR-002 (dual deploy); ADR-003 (separate Allure site)
 - **Depends on:** TASK-005, TASK-007
 - **Modules touched:** `.github/workflows/c-integration.yml` (deliverable, repo root)
