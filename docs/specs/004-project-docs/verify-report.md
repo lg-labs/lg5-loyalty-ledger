@@ -138,7 +138,7 @@ above is `Status: done` except TASK-012 (`Status: todo` — see §4).
 
 | REQ | AC | Procedure | Verified by | Date | Status |
 |-----|----|-----------|-------------|------|:-----:|
-| REQ-001 | Home identifies loyalty-ledger | TASK-012 step (1)+(2): open `https://lglabs-pentagon.github.io/lg5-loyalty-ledger/` and `https://lglabs-loyalty-docs.web.app/` in incognito | implementer (post-merge) | TBD | 🟡 |
+| REQ-001 | Home identifies loyalty-ledger | TASK-012 step (1)+(2): open `https://lg-labs.github.io/lg5-loyalty-ledger/` and `https://lglabs-loyalty-docs.web.app/` in incognito | implementer (post-merge) | TBD | 🟡 |
 | REQ-002 | Architecture link works | TASK-012 step (1)+(2): click each nav entry | implementer (post-merge) | TBD | 🟡 |
 | REQ-003 | Sync (API) contract link works | TASK-012 step (1)+(2): click "API" nav entry | implementer (post-merge) | TBD | 🟡 |
 | REQ-004 | Async (Events) contract link works | TASK-012 step (1)+(2): click "Events" nav entry | implementer (post-merge) | TBD | 🟡 |

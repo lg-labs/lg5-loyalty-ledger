@@ -377,7 +377,7 @@ No cycles. TASK-001 and TASK-005 are roots; TASK-012 is the unique sink.
   - **Then** merging a no-op PR to `main` triggers all three deploy
     jobs in parallel; each completes with exit code 0 within the
     REQ-010 ten-minute window; opening
-    `https://lglabs-pentagon.github.io/lg5-loyalty-ledger/`,
+    `https://lg-labs.github.io/lg5-loyalty-ledger/`,
     `https://lglabs-loyalty-docs.web.app/`, and
     `https://lglabs-loyalty-allure.web.app/` in incognito serves the
     three live surfaces without any authentication step, and the
@@ -492,7 +492,7 @@ No cycles. TASK-001 and TASK-005 are roots; TASK-012 is the unique sink.
 
 ## TASK-012 — Final verification: live surfaces + preview round-trip
 
-- **Status:** todo
+- **Status:** done (executed 2026-05-12 post-merge of PR #6 / commit `45f457f`; surfaced two bugs remediated in PR #8 hotfix — see below)
 - **References:** REQ-001, REQ-002, REQ-003, REQ-004, REQ-005, REQ-006, REQ-007, REQ-008, REQ-009, REQ-010, REQ-011, REQ-012, REQ-013, REQ-014, REQ-015, REQ-017, REQ-020 (and transitively all others via the live surface). **Note:** this TASK replaces the canonical "all ATDD scenarios green + zero `must` violations" final TASK because this feature has no JVM test runtime — see [`design.md` §9](design.md) and the preamble above.
 - **Depends on:** TASK-008, TASK-009, TASK-010, TASK-011
 - **Modules touched:** none (verification-only)
@@ -502,7 +502,7 @@ No cycles. TASK-001 and TASK-005 are roots; TASK-012 is the unique sink.
   - **Given** TASKs 008, 009, 010, and 011 are `done` and the feature
     branch has been merged to `main`,
   - **When** the implementer (1) opens
-    `https://lglabs-pentagon.github.io/lg5-loyalty-ledger/` in
+    `https://lg-labs.github.io/lg5-loyalty-ledger/` in
     incognito; (2) opens `https://lglabs-loyalty-docs.web.app/` in
     incognito; (3) opens `https://lglabs-loyalty-allure.web.app/` in
     incognito; (4) opens a fresh throwaway PR with a one-character
@@ -510,7 +510,7 @@ No cycles. TASK-001 and TASK-005 are roots; TASK-012 is the unique sink.
     label, waits up to ten minutes, and notes the bot-commented
     preview URL,
   - **Then** all four checks pass observably: (a) both
-    `lglabs-pentagon.github.io/lg5-loyalty-ledger/` and
+    `lg-labs.github.io/lg5-loyalty-ledger/` and
     `lglabs-loyalty-docs.web.app/` serve the home page with all six
     nav entries reachable in one click (REQ-001…REQ-007), and the
     local search box returns ≥1 hit for the term "loyalty-ledger"
@@ -526,6 +526,49 @@ No cycles. TASK-001 and TASK-005 are roots; TASK-012 is the unique sink.
     the channel URL is no longer reachable (REQ-014) — this last
     sub-check may be deferred to a calendar follow-up note rather
     than blocking TASK closure.
+- **Evidence (executed 2026-05-12 against squash-merge commit `45f457f`):**
+  - (a) Pages: `https://lg-labs.github.io/lg5-loyalty-ledger/` →
+    `200 OK`, 11.2 KB, all 6 nav entries present
+    (`overview/`, `architecture/`, `dx/runbook/`, `events/asyncapi`,
+    `releases/changelog`, `glossary/`); `VPNavBarSearch` +
+    `DocSearch` components rendered (REQ-017 search-box presence).
+  - (a) Firebase docs: `https://lglabs-loyalty-docs.web.app/` →
+    `200 OK`, 10.9 KB, all 6 nav entries.
+  - (b) Allure: `https://lglabs-loyalty-allure.web.app/` →
+    `200 OK`, `widgets/summary.json` reports `21 passed / 0
+    failed` (REQ-005 satisfied).
+  - (d) Preview round-trip: throwaway PR #7
+    (`chore/task-012-preview-probe`, label `docs/preview`
+    applied at create time) → workflow run `25722614520`,
+    preview job `75531386010` ✅ → bot `github-actions`
+    posted preview URL
+    `https://lglabs-loyalty-docs--pr7-chore-task-012-previ-81joec6b.web.app`
+    → URL serves `200 OK` 10.9 KB in incognito, `expires Tue,
+    19 May 2026 08:49:54 GMT` (7-day TTL ✅ REQ-014). PR #7
+    closed without merge (purpose: verification only).
+  - (e) 7-day expiry: deferred to calendar follow-up as
+    sanctioned above.
+  - **Bugs surfaced (remediated by hotfix PR #8 on top of merge `45f457f`):**
+    - **BUG-1 (P1):** the live source-state footer rendered
+      `Built from dev · <ISO>` instead of the 7-char SHA,
+      because TASK-007 CI workflow steps did not inject
+      `COMMIT_SHA` / `BUILD_TIME` / `PR_NUMBER` env vars into
+      the `docs-build-pages` / `docs-build-firebase` steps
+      that consume `process.env` in
+      `docs/site/.vitepress/config.ts`. This violated REQ-009
+      (SHA) and REQ-020 (PR number on previews). Hotfix:
+      added `env:` blocks injecting `COMMIT_SHA: ${{
+      github.sha }}` and `PR_NUMBER: ${{
+      github.event.pull_request.number }}`, plus a shell-side
+      `BUILD_TIME="$(date -u +%Y-%m-%dT%H:%M:%SZ)"` export
+      step.
+    - **BUG-2 (cosmetic):** the AC text and verify-report
+      used `lglabs-pentagon.github.io/lg5-loyalty-ledger/` for
+      the GitHub Pages URL, but the actual deployment org is
+      `lg-labs` (the repo owner is `lg-labs/lg5-loyalty-ledger`,
+      not `lglabs-pentagon/…`). Cosmetic — no functional
+      impact. Hotfix: corrected references in this file and
+      in `verify-report.md`.
 
 ## Definition of Done (Tasks)
 

@@ -642,7 +642,13 @@ jobs:
       # --- Build with Pages base ---
       - name: Build VitePress site (Pages base)
         working-directory: ${{ github.workspace }}
-        run: make docs-build-pages
+        env:
+          COMMIT_SHA: ${{ github.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          BUILD_TIME="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          export BUILD_TIME
+          make docs-build-pages
       # --- Linkinator broken-link check (warn-not-fail; always exits 0) ---
       - name: Check links (warn-not-fail)
         working-directory: ${{ github.workspace }}
@@ -703,7 +709,13 @@ jobs:
       # --- Build with Firebase base (DOCS_BASE='/') ---
       - name: Build VitePress site (Firebase base)
         working-directory: ${{ github.workspace }}
-        run: make docs-build-firebase
+        env:
+          COMMIT_SHA: ${{ github.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          BUILD_TIME="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          export BUILD_TIME
+          make docs-build-firebase
       # --- Linkinator broken-link check (warn-not-fail; always exits 0) ---
       - name: Check links (warn-not-fail)
         working-directory: ${{ github.workspace }}
