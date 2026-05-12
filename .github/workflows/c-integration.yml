@@ -579,3 +579,271 @@ jobs:
             exit 1
           fi
           echo "OK: check-schema-compat is read-only (versions=$after)"
+
+  # ─── DOCS jobs (feat 004 — VitePress build) ───
+  # See docs/specs/004-project-docs/design.md §7.9–§7.10.
+  # Two near-identical jobs: one for GitHub Pages (DOCS_BASE='/lg5-loyalty-ledger/'),
+  # one for Firebase Hosting (DOCS_BASE='/'). Both consume artifacts from the
+  # upstream `build`, `visualization`, `openapi`, and `asyncapi` jobs and place
+  # them under the paths that scripts/check-artifacts.mjs expects.
+  #
+  # Constraint C (stakeholder-decided): upstream `openapi` / `asyncapi` jobs
+  # produce `index.html` (not `swagger-ui.html` / `asyncapi.html`). The download
+  # steps below rename via `cp` so that design.md §7.8 expected paths
+  # (`docs/site/api/swagger-ui.html`, `docs/site/events/asyncapi.html`) hold.
+  # The `openapi.yaml` / `asyncapi.yaml` files inside those artifacts are
+  # intentionally NOT copied under `docs/site/{api,events}/` to avoid VitePress
+  # treating them as routes.
+  docs-build-pages:
+    name: Docs Build (Pages)
+    runs-on: ubuntu-latest
+    needs: [openapi, asyncapi, build, visualization]
+    defaults:
+      run:
+        working-directory: docs/site
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 11.0.9
+      - name: Install docs dependencies
+        working-directory: ${{ github.workspace }}
+        run: make docs-install
+      # --- Download upstream artifacts (4 of them) ---
+      - name: Download dependency-graph
+        uses: actions/download-artifact@v4
+        with:
+          name: dependency-graph
+          path: docs/site/public
+      - name: Download gource
+        uses: actions/download-artifact@v4
+        with:
+          name: gource
+          path: docs/site/public
+      - name: Download openapi-doc (renamed → swagger-ui.html)
+        uses: actions/download-artifact@v4
+        with:
+          name: openapi-doc
+          path: /tmp/openapi-artifact
+      - name: Place swagger-ui.html into docs/site/api/
+        working-directory: ${{ github.workspace }}
+        run: cp /tmp/openapi-artifact/index.html docs/site/api/swagger-ui.html
+      - name: Download asyncapi-doc (renamed → asyncapi.html)
+        uses: actions/download-artifact@v4
+        with:
+          name: asyncapi-doc
+          path: /tmp/asyncapi-artifact
+      - name: Place asyncapi.html into docs/site/events/
+        working-directory: ${{ github.workspace }}
+        run: cp /tmp/asyncapi-artifact/index.html docs/site/events/asyncapi.html
+      # --- Build with Pages base ---
+      - name: Build VitePress site (Pages base)
+        working-directory: ${{ github.workspace }}
+        run: make docs-build-pages
+      # --- Linkinator broken-link check (warn-not-fail; always exits 0) ---
+      - name: Check links (warn-not-fail)
+        working-directory: ${{ github.workspace }}
+        run: cd docs/site && node scripts/linkinator-to-annotations.mjs
+      # --- Upload artifact ---
+      - name: Upload docs-dist-pages artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docs-dist-pages
+          path: docs/site/.vitepress/dist
+          if-no-files-found: error
+
+  docs-build-firebase:
+    name: Docs Build (Firebase)
+    runs-on: ubuntu-latest
+    needs: [openapi, asyncapi, build, visualization]
+    defaults:
+      run:
+        working-directory: docs/site
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 11.0.9
+      - name: Install docs dependencies
+        working-directory: ${{ github.workspace }}
+        run: make docs-install
+      # --- Download upstream artifacts (4 of them) ---
+      - name: Download dependency-graph
+        uses: actions/download-artifact@v4
+        with:
+          name: dependency-graph
+          path: docs/site/public
+      - name: Download gource
+        uses: actions/download-artifact@v4
+        with:
+          name: gource
+          path: docs/site/public
+      - name: Download openapi-doc (renamed → swagger-ui.html)
+        uses: actions/download-artifact@v4
+        with:
+          name: openapi-doc
+          path: /tmp/openapi-artifact
+      - name: Place swagger-ui.html into docs/site/api/
+        working-directory: ${{ github.workspace }}
+        run: cp /tmp/openapi-artifact/index.html docs/site/api/swagger-ui.html
+      - name: Download asyncapi-doc (renamed → asyncapi.html)
+        uses: actions/download-artifact@v4
+        with:
+          name: asyncapi-doc
+          path: /tmp/asyncapi-artifact
+      - name: Place asyncapi.html into docs/site/events/
+        working-directory: ${{ github.workspace }}
+        run: cp /tmp/asyncapi-artifact/index.html docs/site/events/asyncapi.html
+      # --- Build with Firebase base (DOCS_BASE='/') ---
+      - name: Build VitePress site (Firebase base)
+        working-directory: ${{ github.workspace }}
+        run: make docs-build-firebase
+      # --- Linkinator broken-link check (warn-not-fail; always exits 0) ---
+      - name: Check links (warn-not-fail)
+        working-directory: ${{ github.workspace }}
+        run: cd docs/site && node scripts/linkinator-to-annotations.mjs
+      # --- Upload artifact ---
+      - name: Upload docs-dist-firebase artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docs-dist-firebase
+          path: docs/site/.vitepress/dist
+          if-no-files-found: error
+
+  # ─── DOCS deploy jobs (feat 004 — push:main only) ───
+  # See docs/specs/004-project-docs/design.md §7.9 (lines 348-393).
+  # Pages deploy uses default GITHUB_TOKEN; Firebase deploys use the
+  # FIREBASE_SERVICE_ACCOUNT_LGLABS_LOYALTY secret (service account JSON).
+  pages-deploy:
+    name: Pages Deploy (docs)
+    runs-on: ubuntu-latest
+    needs: docs-build-pages
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Download docs-dist-pages artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: docs-dist-pages
+          path: ./pages-dist
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+      # GitHub Pages requires its own artifact format (a tarball uploaded by
+      # actions/upload-pages-artifact, not the regular upload-artifact). We
+      # re-upload the regular artifact here in the Pages-format expected by
+      # actions/deploy-pages.
+      - name: Upload Pages artifact (re-upload as Pages-format tarball)
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./pages-dist
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+  firebase-deploy-docs:
+    name: Firebase Deploy (docs)
+    runs-on: ubuntu-latest
+    needs: docs-build-firebase
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    defaults:
+      run:
+        working-directory: docs/site
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 11.0.9
+      - name: Install docs dependencies
+        working-directory: ${{ github.workspace }}
+        run: make docs-install
+      - name: Download docs-dist-firebase artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: docs-dist-firebase
+          path: docs/site/.vitepress/dist
+      - name: Authenticate to Firebase
+        run: |
+          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_LGLABS_LOYALTY }}' > /tmp/firebase-sa.json
+          echo "GOOGLE_APPLICATION_CREDENTIALS=/tmp/firebase-sa.json" >> "$GITHUB_ENV"
+      - name: Deploy to Firebase Hosting (docs target)
+        run: pnpm exec firebase deploy --only hosting:docs --project lglabs-loyalty --non-interactive
+
+  firebase-deploy-allure:
+    name: Firebase Deploy (allure)
+    runs-on: ubuntu-latest
+    needs: allure
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    defaults:
+      run:
+        working-directory: docs/site
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 11.0.9
+      - name: Install docs dependencies
+        working-directory: ${{ github.workspace }}
+        run: make docs-install
+      - name: Download allure-report artifact (from upstream allure job)
+        uses: actions/download-artifact@v4
+        with:
+          name: allure-report
+          path: docs/site/allure-dist
+      - name: Authenticate to Firebase
+        run: |
+          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_LGLABS_LOYALTY }}' > /tmp/firebase-sa.json
+          echo "GOOGLE_APPLICATION_CREDENTIALS=/tmp/firebase-sa.json" >> "$GITHUB_ENV"
+      - name: Deploy to Firebase Hosting (allure target)
+        run: pnpm exec firebase deploy --only hosting:allure --project lglabs-loyalty --non-interactive
+
+  # ─── DOCS preview job (feat 004 — pull_request + label gate) ───
+  # See docs/specs/004-project-docs/design.md §7.9 lines 395-401 + §7.10 row 6.
+  # Stakeholder Q3: auto-comment of preview URL is provided by
+  # FirebaseExtended/action-hosting-deploy@v0 itself (idempotent: a single
+  # PR comment is created and edited in place across re-deploys).
+  # Risk R3 (fork PRs): the action fails fast if the Firebase secret is
+  # unavailable; no manual fork-skip clause needed.
+  firebase-preview:
+    name: Firebase Preview (PR channel)
+    runs-on: ubuntu-latest
+    needs: docs-build-firebase
+    if: |
+      github.event_name == 'pull_request' &&
+      contains(github.event.pull_request.labels.*.name, 'docs/preview')
+    permissions:
+      pull-requests: write
+      checks: write
+    steps:
+      - uses: actions/checkout@v5
+      - name: Download docs-dist-firebase artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: docs-dist-firebase
+          path: docs/site/.vitepress/dist
+      - name: Deploy to Firebase preview channel
+        id: deploy
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_LGLABS_LOYALTY }}
+          projectId: lglabs-loyalty
+          target: docs
+          expires: 7d
+          entryPoint: docs/site

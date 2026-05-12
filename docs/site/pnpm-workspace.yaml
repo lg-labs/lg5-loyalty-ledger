@@ -1,0 +1,13 @@
+# pnpm 11 settings for the docs site.
+#
+# Build scripts of native modules transitively required by our dev-dependencies
+# (esbuild via vitepress, protobufjs/re2 via firebase-tools) must be explicitly
+# allowed; otherwise pnpm 11 fails with ERR_PNPM_IGNORED_BUILDS under
+# `--frozen-lockfile` (the strict-dep-builds default is `true` in v11).
+#
+# Per pnpm docs: in v11 `onlyBuiltDependencies` was removed and replaced by
+# `allowBuilds`. See https://pnpm.io/settings#allowbuilds
+allowBuilds:
+  esbuild: true
+  protobufjs: true
+  re2: true
