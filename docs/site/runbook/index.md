@@ -126,3 +126,4 @@ click away:
 | Events (asynchronous, AsyncAPI / Avro) | [`/events/`](/events/) |
 | Architecture Decision Records | [`/adr/`](/adr/) |
 | Acceptance Report (live Allure) | [lglabs-loyalty-allure.web.app](https://lglabs-loyalty-allure.web.app/) |
+
