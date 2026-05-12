@@ -589,11 +589,17 @@ jobs:
   #
   # Constraint C (stakeholder-decided): upstream `openapi` / `asyncapi` jobs
   # produce `index.html` (not `swagger-ui.html` / `asyncapi.html`). The download
-  # steps below rename via `cp` so that design.md §7.8 expected paths
-  # (`docs/site/api/swagger-ui.html`, `docs/site/events/asyncapi.html`) hold.
-  # The `openapi.yaml` / `asyncapi.yaml` files inside those artifacts are
-  # intentionally NOT copied under `docs/site/{api,events}/` to avoid VitePress
-  # treating them as routes.
+  # steps below rename via `cp`.
+  #
+  # IMPORTANT — VitePress static-asset wiring:
+  # The HTML viewers MUST be placed under `docs/site/public/` (not under
+  # `docs/site/api/` or `docs/site/events/`) so that VitePress serves them
+  # verbatim instead of trying to process them as routes. VitePress copies
+  # everything under `public/` to the build root preserving structure, so
+  # `docs/site/public/api/swagger-ui.html` is served at `/api/swagger-ui.html`
+  # (or `/lg5-loyalty-ledger/api/swagger-ui.html` for the Pages base). This
+  # mirrors the dependency-graph.png / gource.mp4 pattern. See:
+  # https://vitepress.dev/guide/asset-handling#the-public-directory
   docs-build-pages:
     name: Docs Build (Pages)
     runs-on: ubuntu-latest
@@ -628,17 +634,28 @@ jobs:
         with:
           name: openapi-doc
           path: /tmp/openapi-artifact
-      - name: Place swagger-ui.html into docs/site/api/
+      - name: Place swagger-ui.html into docs/site/public/api/
         working-directory: ${{ github.workspace }}
-        run: cp /tmp/openapi-artifact/index.html docs/site/api/swagger-ui.html
+        run: |
+          mkdir -p docs/site/public/api
+          cp /tmp/openapi-artifact/index.html docs/site/public/api/swagger-ui.html
+          # Also copy the raw spec so the Swagger UI page can fetch it relative.
+          if [ -f /tmp/openapi-artifact/openapi.yaml ]; then
+            cp /tmp/openapi-artifact/openapi.yaml docs/site/public/api/openapi.yaml
+          fi
       - name: Download asyncapi-doc (renamed → asyncapi.html)
         uses: actions/download-artifact@v4
         with:
           name: asyncapi-doc
           path: /tmp/asyncapi-artifact
-      - name: Place asyncapi.html into docs/site/events/
+      - name: Place asyncapi.html into docs/site/public/events/
         working-directory: ${{ github.workspace }}
-        run: cp /tmp/asyncapi-artifact/index.html docs/site/events/asyncapi.html
+        run: |
+          mkdir -p docs/site/public/events
+          cp /tmp/asyncapi-artifact/index.html docs/site/public/events/asyncapi.html
+          if [ -f /tmp/asyncapi-artifact/asyncapi.yaml ]; then
+            cp /tmp/asyncapi-artifact/asyncapi.yaml docs/site/public/events/asyncapi.yaml
+          fi
       # --- Build with Pages base ---
       - name: Build VitePress site (Pages base)
         working-directory: ${{ github.workspace }}
@@ -695,17 +712,28 @@ jobs:
         with:
           name: openapi-doc
           path: /tmp/openapi-artifact
-      - name: Place swagger-ui.html into docs/site/api/
+      - name: Place swagger-ui.html into docs/site/public/api/
         working-directory: ${{ github.workspace }}
-        run: cp /tmp/openapi-artifact/index.html docs/site/api/swagger-ui.html
+        run: |
+          mkdir -p docs/site/public/api
+          cp /tmp/openapi-artifact/index.html docs/site/public/api/swagger-ui.html
+          # Also copy the raw spec so the Swagger UI page can fetch it relative.
+          if [ -f /tmp/openapi-artifact/openapi.yaml ]; then
+            cp /tmp/openapi-artifact/openapi.yaml docs/site/public/api/openapi.yaml
+          fi
       - name: Download asyncapi-doc (renamed → asyncapi.html)
         uses: actions/download-artifact@v4
         with:
           name: asyncapi-doc
           path: /tmp/asyncapi-artifact
-      - name: Place asyncapi.html into docs/site/events/
+      - name: Place asyncapi.html into docs/site/public/events/
         working-directory: ${{ github.workspace }}
-        run: cp /tmp/asyncapi-artifact/index.html docs/site/events/asyncapi.html
+        run: |
+          mkdir -p docs/site/public/events
+          cp /tmp/asyncapi-artifact/index.html docs/site/public/events/asyncapi.html
+          if [ -f /tmp/asyncapi-artifact/asyncapi.yaml ]; then
+            cp /tmp/asyncapi-artifact/asyncapi.yaml docs/site/public/events/asyncapi.yaml
+          fi
       # --- Build with Firebase base (DOCS_BASE='/') ---
       - name: Build VitePress site (Firebase base)
         working-directory: ${{ github.workspace }}
