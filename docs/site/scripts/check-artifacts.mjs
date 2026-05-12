@@ -43,12 +43,12 @@ const ARTIFACTS = [
     copy: 'The repository activity visualization was not produced in the most recent CI run.',
   },
   {
-    artifact: 'api/swagger-ui.html',
+    artifact: 'public/api/swagger-ui.html',
     section: 'api',
     copy: 'The synchronous service contract (Swagger UI) was not produced in the most recent CI run.',
   },
   {
-    artifact: 'events/asyncapi.html',
+    artifact: 'public/events/asyncapi.html',
     section: 'events',
     copy: 'The asynchronous service contract (AsyncAPI) was not produced in the most recent CI run.',
   },
