@@ -2,8 +2,8 @@
 kind: spec
 name: tasks
 feature: 004-project-docs
-version: 0.2.0
-description: Atomic TASK list for the loyalty-ledger documentation surface (VitePress + dual deploy + label-gated previews + Allure cross-link). Decomposed from plan.md and design.md. Regenerated after layout decision (commit 42424bc) — all Node tooling now lives under docs/site/.
+version: 0.3.0
+description: Atomic TASK list for the loyalty-ledger documentation surface. Extends the previously completed docs-site infrastructure wave with a technical-content maturity wave.
 ---
 
 # Tasks — `004-project-docs`
@@ -23,6 +23,25 @@ description: Atomic TASK list for the loyalty-ledger documentation surface (Vite
 > `8a87c71`) was discarded (commit `42424bc`) because every path needed
 > updating. Same overall shape (12 TASKs, same DAG, same REQ coverage),
 > updated paths everywhere.
+
+## Preamble — technical-content extension
+
+TASK-001 through TASK-012 delivered the documentation-surface infrastructure:
+VitePress scaffold, Firebase/Pages deploy, preview channels, placeholder policy,
+link-check behavior, and basic landing pages.
+
+This refresh adds a second wave focused on technical documentation maturity.
+
+This wave remains docs-only:
+
+- no production Java code changes
+- no runtime behavior changes
+- no API contract redesign
+- no event contract redesign
+- no CI topology redesign
+
+The goal is to replace placeholder-first or minimal-content sections with
+useful, service-specific technical documentation for `loyalty-ledger`.
 
 ## Preamble — feature shape (read before consuming any TASK)
 
@@ -50,11 +69,12 @@ consequence, throughout this TASK list:
   `/scaffold-docs` command (ADR-006 follow-up) does not exist yet;
   `/scaffold-service`, `/add-saga`, `/add-outbox`, `/add-kafka-listener`
   are all N/A.
-- The **last TASK is NOT** the canonical "all ATDD scenarios green +
-  zero `must` violations from `lg5-code-reviewer`" — there is no ATDD
-  in this feature (per [`design.md` §9](design.md): no JVM test runtime,
-  RULE-012/RULE-013 N/A). The final TASK is the **visual-smoke + final
-  verification** TASK-012 below.
+- The original infrastructure wave closed with **TASK-012** rather than
+  the canonical "all ATDD scenarios green + zero `must` violations from
+  `lg5-code-reviewer`" final task, because there is no ATDD in this
+  feature (per [`design.md` §10](design.md): no JVM test runtime,
+  RULE-012/RULE-013 N/A). The current extension adds a second content wave
+  that closes with a documentation-coherence validation task instead.
 
 ## Dependency DAG (verified acyclic)
 
@@ -579,15 +599,203 @@ No cycles. TASK-001 and TASK-005 are roots; TASK-012 is the unique sink.
       ASCII dep graph above and the machine-readable list.
 - [x] First TASK is the smallest precondition (`docs/site/package.json`
       + pnpm scaffold + `.gitignore` updates).
-- [ ] Last TASK is "all ATDD scenarios green + zero `must` violations"
-      — **N/A for this feature**: no ATDD exists (per [`design.md`
-      §9](design.md): no JVM test runtime, RULE-012/RULE-013 N/A).
-      The last TASK (TASK-012) is the **visual-smoke + final
-      verification** equivalent. This is the only intentionally
-      unchecked DoD box.
+- [ ] Final TASK follows the canonical "all ATDD scenarios green + zero
+      `must` violations" shape — **N/A for this feature**: no ATDD
+      exists (per [`design.md` §10](design.md): no JVM test runtime,
+      RULE-012/RULE-013 N/A). The infrastructure wave closed with the
+      **visual-smoke + final verification** TASK-012; the technical-content
+      extension closes with TASK-027 (documentation coherence validation).
+      This is the only intentionally unchecked DoD box.
 - [x] Each TASK names the exact module(s)/deliverable(s), skill(s),
       and command(s)/subagent(s) it uses (with the documented
       reinterpretation in the preamble: deliverables instead of Maven
       modules, all paths `docs/site/`-prefixed; `lg5-vitepress-docs
       (future, see ADR-006)` / `lg5-github-actions` / `(none)` for
       skills; `(none — manual implementation)` for commands).
+
+---
+
+## Dependency DAG (technical-content wave)
+
+```
+TASK-013 (PRD refresh)
+  └── TASK-014 (Plan refresh)
+        └── TASK-015 (Design refresh)
+              └── TASK-016 (Tasks refresh baseline)
+                    ├── TASK-017 (QuickStart)
+                    ├── TASK-018 (Architecture overview)
+                    ├── TASK-019 (C4+1 views)
+                    ├── TASK-020 (DDD page)
+                    ├── TASK-021 (REST page)
+                    ├── TASK-022 (Events page)
+                    ├── TASK-023 (ADR hybrid index)
+                    ├── TASK-024 (FAQ)
+                    ├── TASK-025 (API + Events landing enrichment)
+                    ├── TASK-026 (Runbook + Home refresh)
+                    └── TASK-027 (Docs coherence validation)
+```
+
+## TASK-013 — Refresh `004-project-docs/prd.md` for the technical-content extension
+
+- **Status:** todo
+- **References:** REQ-021, REQ-022, REQ-023, REQ-024, REQ-025, REQ-026, REQ-027, REQ-028
+- **Depends on:** —
+- **Modules touched:** `docs/specs/004-project-docs/prd.md`
+- **Acceptance:**
+  - **Given** the original feature-004 PRD is focused on docs-surface infrastructure
+  - **When** the PRD is refreshed
+  - **Then** it explicitly includes the new technical-content scope for Architecture, QuickStart, FAQ, ADRs, REST, Events, DDD, C4+1, repository-local source-of-truth policy, and ecosystem-aligned terminology.
+
+## TASK-014 — Refresh `004-project-docs/plan.md` with page map and source-of-truth policy
+
+- **Status:** todo
+- **References:** REQ-021, REQ-022, REQ-023, REQ-024, REQ-025, REQ-026, REQ-027, REQ-028
+- **Depends on:** TASK-013
+- **Modules touched:** `docs/specs/004-project-docs/plan.md`
+- **Acceptance:**
+  - **Given** the refreshed PRD
+  - **When** the plan is updated
+  - **Then** it defines the page map, editorial model, source-priority policy, ADR index approach, and Mermaid diagram scope.
+
+## TASK-015 — Refresh `004-project-docs/design.md` with page structures and editorial rules
+
+- **Status:** todo
+- **References:** REQ-021, REQ-022, REQ-023, REQ-024, REQ-025, REQ-026, REQ-027, REQ-028
+- **Depends on:** TASK-014
+- **Modules touched:** `docs/specs/004-project-docs/design.md`
+- **Acceptance:**
+  - **Given** the refreshed plan
+  - **When** the design is updated
+  - **Then** every target page has a defined structure, source mapping, navigation role, cross-link rule, and bounded Mermaid policy.
+
+## TASK-016 — Regenerate `004-project-docs/tasks.md` for the technical-content wave
+
+- **Status:** todo
+- **References:** REQ-021, REQ-022, REQ-023, REQ-024, REQ-025, REQ-026, REQ-027, REQ-028
+- **Depends on:** TASK-015
+- **Modules touched:** `docs/specs/004-project-docs/tasks.md`
+- **Acceptance:**
+  - **Given** the refreshed design
+  - **When** the tasks file is updated
+  - **Then** the technical-content wave is decomposed into atomic tasks with clear dependencies and acceptance criteria, without reopening infrastructure tasks already completed in TASK-001..TASK-012.
+
+## TASK-017 — Add `docs/site/quickstart/index.md`
+
+- **Status:** todo
+- **References:** REQ-022, REQ-027, REQ-028
+- **Depends on:** TASK-016
+- **Modules touched:** `docs/site/quickstart/index.md`, `docs/site/.vitepress/config.ts`
+- **Acceptance:**
+  - **Given** a new technical contributor
+  - **When** they read `QuickStart`
+  - **Then** they can clone, initialize submodules, bootstrap the toolchain, run key build/test/docs commands, and identify the next recommended pages to read.
+
+## TASK-018 — Replace `docs/site/architecture/index.md` placeholder with a service-specific overview
+
+- **Status:** todo
+- **References:** REQ-021, REQ-024, REQ-026, REQ-027, REQ-028
+- **Depends on:** TASK-016
+- **Modules touched:** `docs/site/architecture/index.md`
+- **Acceptance:**
+  - **Given** the current placeholder-first architecture page
+  - **When** the page is rewritten
+  - **Then** it explains service purpose, responsibilities, boundaries, high-level read/write flows, and links to deeper architecture pages.
+
+## TASK-019 — Add `docs/site/architecture/c4-model.md` with diagrams
+
+- **Status:** todo
+- **References:** REQ-025, REQ-027, REQ-028
+- **Depends on:** TASK-018
+- **Modules touched:** `docs/site/architecture/c4-model.md`, `docs/site/.vitepress/config.ts`
+- **Acceptance:**
+  - **Given** the architecture overview exists
+  - **When** the C4+1 page is added
+  - **Then** it includes at least a system-context view, a module/container view, and dynamic views for the main write and read paths, all rendered with understandable diagrams plus short explanatory text.
+
+## TASK-020 — Add `docs/site/architecture/ddd.md`
+
+- **Status:** todo
+- **References:** REQ-024, REQ-027, REQ-028
+- **Depends on:** TASK-018
+- **Modules touched:** `docs/site/architecture/ddd.md`
+- **Acceptance:**
+  - **Given** the service's real module boundaries
+  - **When** the DDD page is written
+  - **Then** it explains domain core, application service, ports/adapters, aggregates/value objects at an appropriate level, and why those boundaries matter in `loyalty-ledger`.
+
+## TASK-021 — Add `docs/site/architecture/rest.md`
+
+- **Status:** todo
+- **References:** REQ-024, REQ-027, REQ-028
+- **Depends on:** TASK-018
+- **Modules touched:** `docs/site/architecture/rest.md`
+- **Acceptance:**
+  - **Given** the OpenAPI contract and API behavior
+  - **When** the REST page is written
+  - **Then** it explains the read-only HTTP surface, resources/endpoints, media type, pagination, error behavior, and how the contract should be interpreted.
+
+## TASK-022 — Add `docs/site/architecture/events.md`
+
+- **Status:** todo
+- **References:** REQ-024, REQ-027, REQ-028
+- **Depends on:** TASK-018
+- **Modules touched:** `docs/site/architecture/events.md`
+- **Acceptance:**
+  - **Given** the AsyncAPI contract and feature-001 event flow
+  - **When** the events page is written
+  - **Then** it explains inbound/outbound topics, idempotency, deduplication, outbox role, traceability, and how the event surface should be read.
+
+## TASK-023 — Replace `docs/site/adr/index.md` with a hybrid ADR landing page
+
+- **Status:** todo
+- **References:** REQ-006, REQ-026, REQ-028
+- **Depends on:** TASK-016
+- **Modules touched:** `docs/site/adr/index.md`
+- **Acceptance:**
+  - **Given** ADRs already exist under `docs/specs/**/adr/*.md`
+  - **When** the ADR landing page is rewritten
+  - **Then** it contains curated introductory context, grouped navigation, featured decisions, and a compact ADR table with direct links to the source ADR files.
+
+## TASK-024 — Add `docs/site/faq/index.md`
+
+- **Status:** todo
+- **References:** REQ-023, REQ-027, REQ-028
+- **Depends on:** TASK-016
+- **Modules touched:** `docs/site/faq/index.md`, `docs/site/.vitepress/config.ts`
+- **Acceptance:**
+  - **Given** recurring contributor/reviewer questions
+  - **When** the FAQ page is added
+  - **Then** it answers setup, navigation, architecture, contract, and workflow questions concisely and links to deeper pages instead of duplicating them.
+
+## TASK-025 — Enrich `docs/site/api/index.md` and `docs/site/events/index.md`
+
+- **Status:** done
+- **References:** REQ-003, REQ-004, REQ-024, REQ-026, REQ-028
+- **Depends on:** TASK-021, TASK-022
+- **Modules touched:** `docs/site/api/index.md`, `docs/site/events/index.md`
+- **Acceptance:**
+  - **Given** the current viewer landing pages are minimal
+  - **When** both pages are enriched
+  - **Then** they keep the viewer/spec links but also explain scope, usage, and interpretation, and cross-link to the relevant architecture deep-dive pages.
+
+## TASK-026 — Refresh `docs/site/runbook/index.md` and `docs/site/index.md`
+
+- **Status:** done
+- **References:** REQ-001, REQ-007, REQ-016, REQ-022, REQ-026, REQ-027, REQ-028
+- **Depends on:** TASK-017, TASK-018, TASK-023, TASK-024, TASK-025
+- **Modules touched:** `docs/site/runbook/index.md`, `docs/site/index.md`, `docs/site/.vitepress/config.ts`
+- **Acceptance:**
+  - **Given** the new content pages exist
+  - **When** the runbook and home page are refreshed
+  - **Then** the home acts as a real technical entry point and the runbook remains focused on onboarding/operational orientation without duplicating the full architecture section.
+
+## TASK-027 — Validate docs coherence, navigation, searchability, and source alignment
+
+- **Status:** done
+- **References:** REQ-017, REQ-018, REQ-019, REQ-021, REQ-022, REQ-023, REQ-024, REQ-025, REQ-026, REQ-027, REQ-028
+- **Depends on:** TASK-019, TASK-020, TASK-021, TASK-022, TASK-023, TASK-024, TASK-025, TASK-026
+- **Modules touched:** `docs/site/**/*`, `docs/specs/004-project-docs/reports/*`
+- **Acceptance:**
+  - **Given** all technical-content pages are in place
+  - **When** the documentation is reviewed end-to-end
+  - **Then** navigation is coherent, search returns useful hits, internal links are sensible, placeholder-first primary pages are eliminated, and the content remains grounded in repository-local sources of truth.

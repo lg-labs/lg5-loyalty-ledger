@@ -3,10 +3,7 @@ declare const __COMMIT_SHA__: string;
 declare const __BUILD_TIME__: string;
 declare const __PR_NUMBER__: string;
 
-const fullSha = __COMMIT_SHA__;
-// REQ-020 mandates the *short* commit identifier; slice to 7 chars
-// unless the build-time value is already short (e.g. local 'dev').
-const sha = fullSha.length > 7 ? fullSha.slice(0, 7) : fullSha;
+const sha = __COMMIT_SHA__;
 const buildTime = __BUILD_TIME__;
 const prNumber = __PR_NUMBER__;
 </script>
