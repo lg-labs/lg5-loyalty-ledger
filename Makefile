@@ -115,7 +115,7 @@ run-atdd-module:
 # from the repo root and the directory transition is transparent.
 # See docs/specs/004-project-docs/design.md §7.6 for the full table.
 
-.PHONY: docs-install docs-build-pages docs-build-firebase docs-preview-local docs-deploy-pages docs-deploy-firebase
+.PHONY: docs-install docs-build-pages docs-build-firebase docs-preview-local docs-preview-built docs-deploy-pages docs-deploy-firebase
 
 docs-install:
 	cd docs/site && pnpm install --frozen-lockfile
@@ -128,6 +128,12 @@ docs-build-firebase:
 
 docs-preview-local:
 	cd docs/site && pnpm run docs:dev
+
+# Build the production bundle (base '/') and serve the static dist on
+# http://localhost:4173/ — mirrors what Firebase Hosting will serve. Use this
+# to sanity-check the *built* site, not the dev server.
+docs-preview-built:
+	cd docs/site && DOCS_BASE='/' pnpm run docs:build && pnpm run docs:preview
 
 docs-deploy-pages:
 	@echo "docs-deploy-pages is CI-only (requires GITHUB_TOKEN with pages:write)."

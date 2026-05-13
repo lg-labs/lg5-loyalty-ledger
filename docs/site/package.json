@@ -9,7 +9,9 @@
     "docs:preview": "vitepress preview ."
   },
   "devDependencies": {
+    "mermaid": "^11.12.1",
     "vitepress": "^1.6.4",
+    "vue": "~3.4.38",
     "firebase-tools": "^15.0.0",
     "linkinator": "^7.0.0"
   }

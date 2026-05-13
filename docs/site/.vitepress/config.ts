@@ -14,8 +14,13 @@ export default defineConfig({
   cleanUrls: true,
   ignoreDeadLinks: true,
   themeConfig: {
+    search: {
+      provider: 'local'
+    },
     nav: [
       { text: 'Architecture', link: '/architecture/' },
+      { text: 'QuickStart', link: '/quickstart/' },
+      { text: 'FAQ', link: '/faq/' },
       { text: 'API (sync)', link: '/api/' },
       { text: 'Events (async)', link: '/events/' },
       { text: 'ADRs', link: '/adr/' },
@@ -23,13 +28,20 @@ export default defineConfig({
       { text: 'Runbook', link: '/runbook/' }
     ],
     sidebar: {
-      '/architecture/': [{ text: 'Overview', link: '/architecture/' }],
+      '/architecture/': [
+        { text: 'Overview', link: '/architecture/' },
+        { text: 'C4+1 Views', link: '/architecture/c4-model' },
+        { text: 'DDD', link: '/architecture/ddd' },
+        { text: 'REST', link: '/architecture/rest' },
+        { text: 'Events', link: '/architecture/events' }
+      ],
+      '/quickstart/': [{ text: 'QuickStart', link: '/quickstart/' }],
+      '/faq/': [{ text: 'FAQ', link: '/faq/' }],
       '/api/': [{ text: 'Synchronous contract', link: '/api/' }],
       '/events/': [{ text: 'Asynchronous contract', link: '/events/' }],
       '/adr/': [{ text: 'Decision records', link: '/adr/' }],
       '/runbook/': [{ text: 'Onboarding runbook', link: '/runbook/' }]
-    },
-    search: { provider: 'local' }
+    }
   },
   vite: {
     define: {
