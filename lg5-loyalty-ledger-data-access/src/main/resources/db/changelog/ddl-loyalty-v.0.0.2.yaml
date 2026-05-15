@@ -1,0 +1,15 @@
+# DDL v0.0.2 — feature 002-points-expiration
+#
+# Adds 'POINTS_EXPIRED' to the loyalty_cause ENUM to support
+# the expiration movement record.
+
+databaseChangeLog:
+  - changeSet:
+      id: loyalty-013-add-points-expired-to-cause
+      author: lglabs
+      changes:
+        - sql:
+            sql: |
+              ALTER TYPE loyalty_cause ADD VALUE 'POINTS_EXPIRED';
+            splitStatements: true
+            stripComments: true
