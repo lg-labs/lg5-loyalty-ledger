@@ -50,27 +50,23 @@ flowchart TB
         MovementsController[GET /movements]
     end
 
-    %% Order events flow
     OrderController -->|publica| OrderPaidEvent
     OrderController -->|publica| OrderCancelledEvent
     OrderController -->|publica| OrderRefundedEvent
 
-    %% Kafka subscription
     ListenerPaid -.- TopicPaid
     ListenerCancelled -.- TopicCancelled
     ListenerRefunded -.- TopicRefunded
 
-    %% Deduplication
-    OrderPaidEvent -->|key=messageId| DedupGate
-    OrderCancelledEvent -->|key=messageId| DedupGate
-    OrderRefundedEvent -->|key=messageId| DedupGate
+    OrderPaidEvent --> DedupGate
+    OrderCancelledEvent --> DedupGate
+    OrderRefundedEvent --> DedupGate
 
-    DedupGate -- "nuevo evento" --> CommandPort
-    DedupGate -- "duplicado/rechazado" -.--> return[Ignorar]
+    DedupGate --nuevo evento--> CommandPort
+    DedupGate --duplicado/rechazado-.--> Ignorar
 
-    CommandPort -- dispatch --> LedgerService
+    CommandPort -->|dispatch| LedgerService
 
-    %% Domain processing
     LedgerService -->|append| TableMovement
     LedgerService -->|update| TableBalance
     LedgerService -.->|raise| CustomerBalanceUpdatedEvent
@@ -80,27 +76,16 @@ flowchart TB
     OutboxScheduler -.reads.-> TableOutbox
     OutboxScheduler -->|publish| TopicBalanceUpdated
 
-    %% Kafka publication
     TopicBalanceUpdated -->|key=customerId| QueryService
 
-    %% API layer
     BalanceController --> QueryService
     MovementsController --> QueryService
 
-    %% Styling
     style OrderService fill:#e1f5fe
     style Kafka fill:#fff3e0
     style LoyaltyLedger fill:#e8f5e9
     style Database fill:#f3e5f5
     style Api fill:#fce4ec
-    style TopicPaid fill:#e3f2fd
-    style TopicCancelled fill:#e3f2fd
-    style TopicRefunded fill:#e3f2fd
-    style TopicBalanceUpdated fill:#fce4ec
-    style TableMovement fill:#f3e5f5
-    style TableBalance fill:#fce4ec
-    style TableOutbox fill:#fff3e0
-    style TableProcessed fill:#e8f5e9
 ```
 
 ---
@@ -110,65 +95,45 @@ flowchart TB
 ### 2.1 C1 - Context Diagram (Vista de Contorno)
 
 ```mermaid
-graph LR
-    subgraph External ["Sistemas Externos"]
-        OrderSvc[Microservicio de Órdenes
-                 <br/>lg-orders]
-        CustomerSvc[Microservicio de Clientes
-                    <br/>lg-customers]
-        OrderSvc2[Microservicio de Órdenes
-                   <br/>lg-orders]
+graph TB
+    subgraph External["Sistemas Externos"]
+        OrderSvc[Microservicio de Ordenes]
     end
 
-    subgraph LG5Loyalty ["lg5-loyalty-ledger"]
-        direction TB
-        API[API REST<br/>8080]
-        KafkaIn[Kafka Inbound<br/>Consumer]
+    subgraph LG5Loyalty["lg5-loyalty-ledger"]
+        API[API REST<br/>Port 8080]
+        KafkaIn[Kafka Inbound<br/>Consumer Group]
         KafkaOut[Kafka Outbound<br/>Outbox]
     end
 
-    subgraph Storage ["Almacenamiento"]
-        DB[(PostgreSQL<br/>H2 en dev)]
+    subgraph Storage["Almacenamiento"]
+        DB[(PostgreSQL<br/>H2 dev)]
         Kafka[(Kafka Cluster<br/>3 brokers)]
     end
-
-    %% Event flows
-    OrderSvc -->|Order Paid/Cancelled/Refunded| KafkaIn
-    OrderSvc2 -->|Order Paid/Cancelled/Refunded| KafkaIn
     
-    %% API flows
-    CustomerSvc -->|queries| API
-    OrderSvc -->|audit queries| API
-
-    %% Outbox flow
-    KafkaOut -->|CustomerBalanceUpdated| Kafka
-
-    %% Storage
-    API -.reads-> DB
-    KafkaOut -.reads-> DB
-    
-    %% Styling
-    style LG5Loyalty fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
+    OrderSvc -.- KafkaIn
+    API <-.-<- DB
+    KafkaOut -.publishes-> Kafka
+    KafkaOut -.- DB
 ```
 
 ### 2.2 C2 - Container Diagram (Vista de Contenedor)
 
 ```mermaid
 graph TB
-    subgraph Containments ["Contenedores Spring Boot"]
+    subgraph Containments["Contenedores Spring Boot"]
         API[lg5-loyalty-ledger-api<br/>Spring WebFlux<br/>Port: 8080]
         APP[lg5-loyalty-ledger-application<br/>Application Services<br/>Inbound Consumers]
         OUTBOX[Outbox Scheduler<br/>Spring @Scheduled<br/>Thread-safe]
     end
 
-    subgraph Infrastructure ["Infraestructura"]
+    subgraph Infrastructure["Infraestructura"]
         DIR[Directory Services<br/>Client Discovery]
         DB[(PostgreSQL<br/>JPA Hibernate<br/>@Version)]
-        KAFKA_IN[Kafka Consumer<br/>order-paid/cancelled/refunded<br/>GroupId: lg5-loyalty-...]<br/>
-        KAFKA_OUT[Kafka Producer<br/>Topic: customer-balance-updated<br/>Key: customerId]
+        KAFKA_IN[Kafka Consumer<br/>order-paid/cancelled/refunded]
+        KAFKA_OUT[Kafka Producer<br/>Topic: customer-balance-updated]
     end
 
-    %% Dependencies
     API --> APP
     API -.read-> DB
     
@@ -182,7 +147,6 @@ graph TB
     OUTBOX -.- KAFKA_OUT
     OUTBOX -.read-> DB
     
-    %% Styling
     style API fill:#e3f2fd,stroke:#1565c0
     style APP fill:#e8f5e9,stroke:#2e7d32
     style OUTBOX fill:#fff3e0,stroke:#ef6c00
@@ -201,7 +165,6 @@ classDiagram
         -BalanceUpdateCause cause
         -OrderId originatingOrderId
         -UUID originatingEventId
-        -String originatingEventType
         -ZonedDateTime originatingEventReceivedAt
         -ZonedDateTime appendedAt
         -int version
@@ -236,40 +199,6 @@ classDiagram
         +getDeduplicatedReason()
     }
 
-    class OrderPaidAvroModel {
-        -String id
-        -String customerId
-        -String orderId
-        -BigInteger paidAmount
-        -Long createdAt
-    }
-
-    class OrderCancelledAvroModel {
-        -String id
-        -String customerId
-        -String orderId
-        -Long createdAt
-    }
-
-    class OrderRefundedAvroModel {
-        -String id
-        -String customerId
-        -String orderId
-        -Long createdAt
-    }
-
-    class CustomerBalanceUpdatedAvroModel {
-        -String messageId
-        -String customerId
-        -long newBalance
-        -int delta
-        -BalanceUpdateCause cause
-        -OrderId originatingOrderId
-        -UUID originatingEventId
-        -String originatingEventType
-        -Long occurredAt
-    }
-
     class LoyaltyLedgerInputPort {
         +applyCredit(CustomerId eventId, long delta)
         +applyDebit(CustomerId eventId, long delta, String reason)
@@ -289,41 +218,7 @@ classDiagram
     }
 
     Movement --> CustomerBalance
-    Movement --* ProcessedInputEvent
-    OrderPaidAvroModel <|-- OrderCancelledAvroModel
-    OrderPaidAvroModel <|-- OrderRefundedAvroModel
-    OrderPaidAvroModel <|-- CustomerBalanceUpdatedAvroModel
-    
-    class CustomerBalanceUpdatedEvent {
-        +CustomerId customerId
-        +long newBalance
-        -int delta
-        +BalanceUpdateCause cause
-        +OrderId originatingOrderId
-        +UUID originatingEventId
-        +String originatingEventType
-        +ZonedDateTime occurredAt
-    }
-
-    class CustomerBalanceUpdatedOutboxScheduler {
-        +schedule()
-        +relay(Payload)
-    }
-
-    class CustomerBalanceUpdatedEventPayload {
-        +CustomerId customerId
-        +long newBalance
-        -int delta
-        +BalanceUpdateCause cause
-        +OrderId originatingOrderId
-        +UUID originatingEventId
-        +String originatingEventType
-        +ZonedDateTime occurredAt
-    }
-
-    CustomerBalanceUpdatedAvroModel *-- CustomerBalanceUpdatedEventPayload
-    CustomerBalanceUpdatedEventPayload --* CustomerBalanceUpdatedEvent : serializa
-
+    Movement -.- ProcessedInputEvent
     LoyaltyLedgerInputPort -|-- CommandBus
     CommandBus -.- Movement
     CommandBus -.- CustomerBalance
@@ -335,38 +230,36 @@ classDiagram
 
 ```mermaid
 graph TB
-    subgraph External ["Entidades Externas"]
+    subgraph External["Entidades Externas"]
         CustomerSvc[Servicio de Gestión de Clientes]
         OrderSvc[Servicio de Gestión de Órdenes]
         AuditSvc[Servicio de Auditoría/Compliance]
     end
 
-    subgraph LG5Loyalty ["lg5-loyalty-ledger"]
+    subgraph LG5Loyalty["lg5-loyalty-ledger"]
         API[API REST v1<br/>8080<br/>Swagger/AsyncAPI]
         
-        subgraph Processing ["Procesamiento de Eventos"]
+        subgraph Processing["Procesamiento de Eventos"]
             Inbound[Consumidores Inbound<br/>order-paid<br/>order-cancelled<br/>order-refunded]
             Ledger[Álgebra de Movimientos<br/>Balance Projection<br/>Aggregate: CustomerBalance]
             Outbox[Transactional Outbox<br/>@Scheduled Scheduler]
         end
         
-        subgraph Querying ["Consulta (CQRS Read)"]
+        subgraph Querying["Consulta (CQRS Read)"]
             Projection[View Layer<br/>CustomerBalance View]
             History[Movements View<br/>Ledger History]
         end
     end
 
-    subgraph Storage ["Almacenamiento"]
+    subgraph Storage["Almacenamiento"]
         DB[PostgreSQL<br/>Tables:<br/>- movement<br/>- customer_balance<br/>- outbox<br/>- processed_input_event]
-        Messages[(Schema Registry<br/>Avro Schemas)]
     end
 
-    subgraph KafkaTopics ["Kafka Topics"]
+    subgraph KafkaTopics["Kafka Topics"]
         InboundTopics[Topics Inbound<br/>loyalty-ledger-order-paid<br/>loyalty-ledger-order-cancelled<br/>loyalty-ledger-order-refunded]
         OutboundTopic[Topic Outbound<br/>loyalty-ledger-customer-balance-updated]
     end
 
-    %% Flows
     OrderSvc -->|inbound events| InboundTopics
     CustomerSvc -.->|queries| API
     API -.- Projection
@@ -380,39 +273,10 @@ graph TB
     Outbox -.- OutboundTopic
     OutboundTopic -.->|publish| InboundTopics
     
-    %% Styling
     style LG5Loyalty fill:#e8f5e9,stroke:#2e7d32,stroke-width:3px
     style API fill:#e3f2fd,stroke:#1565c0
     style Processing fill:#fff3e0,stroke:#f57f17
     style Querying fill:#e8f5e9,stroke:#1b5e20
-```
-
-### 2.5 Reglas de Calidad (Quality Rules)
-
-```mermaid
-mindmap
-  root((Reglas C4+1))
-    C1
-      Context Diagram
-    C2
-      Container Diagram
-      Port Dependencies
-      Outbox Pattern
-    C3
-      Component Diagram
-      Aggregate Roots
-      Domain Events
-      DTOs
-    C4
-      System Architecture
-      Views
-      Persistence
-    +1
-      Actors
-      User Stories
-      NonFunctional
-      Security
-      Scalability
 ```
 
 ---
