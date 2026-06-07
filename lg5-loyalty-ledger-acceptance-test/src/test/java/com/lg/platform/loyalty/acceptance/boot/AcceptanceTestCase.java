@@ -44,5 +44,5 @@ import org.junit.platform.suite.api.Suite;
                 key = Constants.GLUE_PROPERTY_NAME,
                 value = "com.lg.platform.loyalty.acceptance")
 })
-public class AcceptanceTestRunnerIT {
+public class AcceptanceTestCase {
 }

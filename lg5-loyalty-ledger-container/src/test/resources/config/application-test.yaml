@@ -13,9 +13,9 @@ scheduling:
 # Testcontainers gates default OFF; ATDD enables individually (RULE-013)
 testcontainers:
   postgres:
-    enabled: false
+    enabled: true
   kafka:
-    enabled: false
+    enabled: true
   schema-registry:
     enabled: false
 

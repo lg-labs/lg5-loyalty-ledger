@@ -12,7 +12,7 @@
     <artifactId>lg5-loyalty-ledger-container</artifactId>
 
     <properties>
-        <start-class>com.lg.platform.loyalty.Lg5LoyaltyLedgerApplication</start-class>
+        <start-class>com.lg.platform.loyalty.Application</start-class>
         <testcontainers.docker.client.strategy>org.testcontainers.dockerclient.UnixSocketClientProviderStrategy</testcontainers.docker.client.strategy>
     </properties>
 
