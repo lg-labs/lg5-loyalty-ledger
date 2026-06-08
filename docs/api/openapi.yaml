@@ -180,7 +180,6 @@ components:
               value:
                 code: INVALID_REQUEST
                 message: "Parameter 'customerId' is not a valid UUID"
-                traceId: null
     CustomerNotFound:
       description: No balance projection row exists for this customer.
       content:
@@ -193,7 +192,6 @@ components:
               value:
                 code: CUSTOMER_NOT_FOUND
                 message: 'Customer balance not found: 00000000-0000-0000-0000-000000000000'
-                traceId: null
     MethodNotAllowed:
       description: Verb not supported on this path (the read API is GET-only).
       content:
@@ -206,7 +204,6 @@ components:
               value:
                 code: METHOD_NOT_ALLOWED
                 message: "HTTP method 'POST' is not supported on this endpoint."
-                traceId: null
     InternalError:
       description: Unexpected server error. Carries a server-minted `traceId`.
       content:
