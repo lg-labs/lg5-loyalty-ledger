@@ -1,7 +1,6 @@
 package com.lg.platform.loyalty.boot;
 
 import com.lg5.spring.testcontainer.config.KafkaContainerCustomConfig;
-import com.lg5.spring.testcontainer.config.PostgresContainerCustomConfig;
 import org.springframework.context.annotation.Import;
 
 /**
@@ -16,6 +15,6 @@ import org.springframework.context.annotation.Import;
  * (Postgres only) and Kafka listener / producer ITs (Postgres + Kafka + Schema
  * Registry).
  */
-@Import({PostgresContainerCustomConfig.class, KafkaContainerCustomConfig.class})
+@Import({LoyaltyLedgerPostgresContainerCustomConfig.class, KafkaContainerCustomConfig.class})
 public final class TestContainersLoader {
 }

@@ -10,12 +10,13 @@ spring:
 scheduling:
   enabled: false
 
-# Testcontainers gates default OFF; ATDD enables individually (RULE-013)
+# Testcontainers gates: Postgres is the default IT substrate; Kafka/SR stay
+# opt-in via @TestPropertySource on the Kafka ITs (RULE-013).
 testcontainers:
   postgres:
     enabled: true
   kafka:
-    enabled: true
+    enabled: false
   schema-registry:
     enabled: false
 

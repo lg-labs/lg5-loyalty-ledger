@@ -3,6 +3,7 @@ package com.lg.platform.loyalty.container.message;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lg.platform.loyalty.application.outbox.model.OutboxMessage;
 import com.lg.platform.loyalty.application.outbox.payload.CustomerBalanceUpdatedEventPayload;
+import com.lg.platform.loyalty.application.outbox.scheduler.CustomerBalanceUpdatedOutboxScheduler;
 import com.lg.platform.loyalty.application.ports.input.LoyaltyLedgerInputPort;
 import com.lg.platform.loyalty.application.ports.output.repository.OutboxRepository;
 import com.lg.platform.loyalty.boot.Bootstrap;
@@ -69,8 +70,8 @@ import static org.awaitility.Awaitility.await;
  * network-alias collision history that motivates the byte-for-byte unification.
  */
 @Slf4j
-@TestPropertySource(properties = {"testcontainers.kafka.enabled=true", "testcontainers.schema-registry.enabled=true", "scheduling.enabled=true", "loyalty-ledger-service.outbox-scheduler-fixed-rate=200",
-		"loyalty-ledger-service.outbox-scheduler-initial-delay=200"})
+@TestPropertySource(properties = {"testcontainers.kafka.enabled=true", "testcontainers.schema-registry.enabled=true", "scheduling.enabled=true", "loyalty-ledger-service.outbox-scheduler-fixed-rate=600000",
+		"loyalty-ledger-service.outbox-scheduler-initial-delay=600000"})
 class CustomerBalanceUpdatedKafkaPublisherIT extends Bootstrap {
 
 	@Value("${kafka-config.bootstrap-servers}")
@@ -87,6 +88,9 @@ class CustomerBalanceUpdatedKafkaPublisherIT extends Bootstrap {
 
 	@Autowired
 	private ObjectMapper objectMapper;
+
+	@Autowired
+	private CustomerBalanceUpdatedOutboxScheduler outboxScheduler;
 
 	/**
 	 * Unused in this IT; declared solely to keep the Spring TestContext cache key
@@ -138,6 +142,7 @@ class CustomerBalanceUpdatedKafkaPublisherIT extends Bootstrap {
 		// beats the subscribe, but starting before keeps polls cheap.)
 		try (final KafkaConsumer<String, Object> consumer = this.newAvroConsumer()) {
 			consumer.subscribe(List.of(this.outboundTopic));
+			this.outboxScheduler.processOutboxMessage();
 
 			// ── Assert (1): Avro arrives ───────────────────────────
 			final CustomerBalanceUpdatedAvroModel record = await().atMost(60, TimeUnit.SECONDS)

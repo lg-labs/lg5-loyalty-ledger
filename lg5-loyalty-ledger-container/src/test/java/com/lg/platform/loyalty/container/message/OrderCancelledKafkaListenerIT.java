@@ -39,8 +39,8 @@ import static org.mockito.Mockito.verify;
  * and topic property key.
  */
 @Slf4j
-@TestPropertySource(properties = {"testcontainers.kafka.enabled=true", "testcontainers.schema-registry.enabled=true", "scheduling.enabled=true", "loyalty-ledger-service.outbox-scheduler-fixed-rate=200",
-		"loyalty-ledger-service.outbox-scheduler-initial-delay=200"
+@TestPropertySource(properties = {"testcontainers.kafka.enabled=true", "testcontainers.schema-registry.enabled=true", "scheduling.enabled=true", "loyalty-ledger-service.outbox-scheduler-fixed-rate=600000",
+		"loyalty-ledger-service.outbox-scheduler-initial-delay=600000"
 // See OrderPaidKafkaListenerIT for why no per-IT-unique
 // properties: identical @TestPropertySource set across all
 // kafka container ITs (listeners + TASK-013 publisher) ⇒

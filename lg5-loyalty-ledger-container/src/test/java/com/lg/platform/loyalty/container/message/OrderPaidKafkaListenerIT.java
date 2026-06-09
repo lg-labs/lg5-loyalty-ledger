@@ -46,8 +46,8 @@ import static org.mockito.Mockito.verify;
  * {@code kafka-config.schema-registry-url} respectively.
  */
 @Slf4j
-@TestPropertySource(properties = {"testcontainers.kafka.enabled=true", "testcontainers.schema-registry.enabled=true", "scheduling.enabled=true", "loyalty-ledger-service.outbox-scheduler-fixed-rate=200",
-		"loyalty-ledger-service.outbox-scheduler-initial-delay=200"
+@TestPropertySource(properties = {"testcontainers.kafka.enabled=true", "testcontainers.schema-registry.enabled=true", "scheduling.enabled=true", "loyalty-ledger-service.outbox-scheduler-fixed-rate=600000",
+		"loyalty-ledger-service.outbox-scheduler-initial-delay=600000"
 // NOTE: do NOT add per-IT-unique property overrides here. The
 // Spring TestContext cache key is derived from the full
 // @TestPropertySource set, so any IT-local property string would
