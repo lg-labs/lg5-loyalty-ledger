@@ -10,6 +10,9 @@ export default defineConfig({
   title: 'loyalty-ledger',
   description: 'Reference documentation for the loyalty-ledger service.',
   base,
+  markdown: {
+    mermaid: true
+  },
   srcDir: '.',
   cleanUrls: true,
   ignoreDeadLinks: true,
