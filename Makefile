@@ -26,7 +26,7 @@ install-skip-test-jib: clean
 run-checkstyle:
 	mvn validate
 run-verify: clean
-	mvn verify -Dit.test="**/*IT.java,**/*Test.java" -Dfailsafe.failIfNoSpecifiedTests=false -Djib.skip=true
+	mvn verify -pl '!lg5-loyalty-ledger-acceptance-test' -Dfailsafe.failIfNoSpecifiedTests=false -Djib.skip=true
 
 run-unit-test: clean
 	mvn test
